@@ -1,0 +1,5 @@
+#   Testing Language Module
+ifplugin Mail::SpamAssassin::Plugin::TextCat
+ok_languages en
+endif # Mail::SpamAssassin::Plugin::TextCat
+

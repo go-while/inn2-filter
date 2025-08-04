@@ -1,0 +1,61 @@
+# WHITELIST
+header  NOCEM_GROUPS  Newsgroups =~ /news\.lists\.filters|rocksolid\.spam|i2pn\.spam/
+score   NOCEM_GROUPS  0.001
+header  NOCEM_SUBJECT   Subject =~ /^\@\@NCM /
+score   NOCEM_SUBJECT   0.001
+meta    NOCEM_GROUPS_AND_NOCEM_SUBJECT  NOCEM_GROUPS && NOCEM_SUBJECT
+score   NOCEM_GROUPS_AND_NOCEM_SUBJECT  -100.0
+
+header  NEWS_FEEDS_GROUPS   Newsgroups =~ /rocksolid\.feeds\./
+score   NEWS_FEEDS_GROUPS   0.001
+header  NEWS_FEEDS_FROM  From =~ /usenet\@novabbs\.org/
+score   NEWS_FEEDS_FROM  0.001
+meta    NEWS_FEEDS_GROUPS_AND_NEWS_FEEDS_FROM   NEWS_FEEDS_GROUPS && NEWS_FEEDS_FROM
+score   NEWS_FEEDS_GROUPS_AND_NEWS_FEEDS_FROM   -100.0
+
+# FIDONET
+header  FIDONET_NG  Newsgroups =~ /fido(7)?\./
+score   FIDONET_NG  -100.00
+
+# NEWSGROUPS
+header  NG_ALT_CHECKMATE Newsgroups =~ /alt\.checkmate/
+score   NG_ALT_CHECKMATE 0.001
+
+# BLACKLIST
+header  USER_AGENT_STOOPEY    User-Agent =~ /St0opey\'s/
+score   USER_AGENT_STOOPEY    0.01
+header  FROM_DERSHMENDER    From =~ /Dershmender/
+score   FROM_DERSHMENDER    0.01
+meta    STOOPEY_DERSHMENDER_META    (USER_AGENT_STOOPEY && FROM_DERSHMENDER) && !NG_ALT_CHECKMATE
+score   STOOPEY_DERSHMENDER_META    8.0
+
+# HeartDoc Andrew
+#header  HEARTDOC_ANDREW     From =~ /HeartDoc Andrew/i
+#score   HEARTDOC_ANDREW     8.0
+#body    BANNED_HEARTDOC     /http\:\/\/bit\.ly\/EternalMedicalLicense/
+#score   BANNED_HEARTDOC     8.0
+
+# from header
+header  BAD_FROM    From =~ /(vvgrant886|jainelectro|georgethecockroach\@gmail\.com|mayaaprianaya\@gmail\.com)/i
+score   BAD_FROM    8.0
+
+# Random users header info (including meta)
+
+body    BODY_UTF_DATA_01        /\+Ps\+\+4j\+KAjfCfjIg/
+score   BODY_UTF_DATA_01        0.01
+tflags  BODY_UTF_DATA_01        multiple maxhits = 11
+meta    META_UTF_DATA_01     BODY_UTF_DATA_01 > 10
+score   META_UTF_DATA_01     5.0
+
+ifplugin Mail::SpamAssassin::Plugin::Shortcircuit
+
+shortcircuit   NOCEM_GROUPS_AND_NOCEM_SUBJECT  on
+tflags  NOCEM_GROUPS_AND_NOCEM_SUBJECT  noautolearn
+
+shortcircuit   NEWS_FEEDS_GROUPS_AND_NEWS_FEEDS_FROM  on
+tflags  NEWS_FEEDS_GROUPS_AND_NEWS_FEEDS_FROM  noautolearn
+
+shortcircuit    BAD_FROM    on
+tflags  BAD_FROM    noautolearn
+
+endif #Mail::SpamAssassin::Plugin::Shortcircuit

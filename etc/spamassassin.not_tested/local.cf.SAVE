@@ -1,0 +1,241 @@
+# This is the right place to customize your installation of SpamAssassin.
+#
+# See 'perldoc Mail::SpamAssassin::Conf' for details of what can be
+# tweaked.
+#
+# Only a small subset of options are listed below
+#
+###########################################################################
+
+header  ABAVIA_BAD_MSGID   Message-ID =~ /^.*@[a-zA-Z0-9\-]{22,26}>$/
+score   ABAVIA_BAD_MSGID   0.001
+header  ABAVIA_CHAR_32_DOMAIN   From =~ /.*@[a-zA-Z0-9]{32}\./
+score   ABAVIA_CHAR_32_DOMAIN   0.001
+meta    ABAVIA_BOT  SERVER_ABAVIA && ABAVIA_BAD_MSGID && ABAVIA_CHAR_32_DOMAIN
+score   ABAVIA_BOT  8.0
+
+# Score: data from inn
+header  SCORE_THREE_CAPRAT Score =~ /\!\!\!CapRat/
+score   SCORE_THREE_CAPRAT  2.0
+
+# sex
+#header	RS_DATING	Subject =~ /(women|girls|dating|looking).*(sex|fuck|\|)/i
+#score	RS_DATING	5.0
+header	RS_DATING2	Subject =~ /Girls\ Looking\ Men/i
+score	RS_DATING2	5.0
+header	RS_DATING3	Subject =~ /Meet for.*(NSA|\|).*(Girls|Women|Date)/i
+score	RS_DATING3	5.0
+header	S_DATING	Subject =~ /Dating/i
+score	S_DATING	1.0
+
+# Does References header exist?
+header  HAS_REFERENCES   exists:References
+score   HAS_REFERENCES   0.01
+
+#meta    BAYES_99_AND_HAS_REFERENCES BAYES_99 && HAS_REFERENCES
+#score   BAYES_99_AND_HAS_REFERENCES -0.5
+
+# HEX STRING SPAM
+####rawbody HEX_STRING_TAIL /(\r\n|\r|\n) [0-9a-f]{10}(\r\n|\r|\n){1,20}\./
+####score   HEX_STRING_TAIL 0.001
+
+# drugs dating gambling other
+header  DRUG_WORDS_SUBJECT   Subject =~ /(\ dmt\ |ozempic|mushrooms|telegram|adderall|xanax|ketamine|cocaine|psilocybin|diazepam|mdma|tramadol|cannabis|valium|oxycodone|shrooms|marijuana|ecstasy|hydrocodone|fentanyl|percocet|heroin|alprazolam|ayahuasca|kush|methamphetamine|ritalin|codeine|morphine|psilocybe|dilaudid|oxycontin|amphetamine|suboxone|viagra|misoprostol|sativa|oxydrhere|cialis|purecybin|promethazine|oxycotin|clonazepam|pentobarbital|lorazepam|mescaline|etizolam|dimethyltryptamine|roxycodone|vicodin|ephedrine|ecstacy|klonopin|ambien|soma|ativan|cytotec|fioricet|indica|\ lsd\ |kush|phentermine|pentobarbital|misoprostol|cytotec|pentobarbital|\ thc\ |abortion\ pills|pentobarbital|Methamphetamine|Tapentadol|Rivotril|Stilnox|zolpidem|nitrazepam|bit\.ly\/|wickr|covid| \(202[0-9]\) |303--747--3036|Pentobarbital)/i
+score   DRUG_WORDS_SUBJECT   1.0
+
+header  DRUG_COWORDS_SUBJECT    Subject =~ /(buy|purchase|online|where\ can\ |shipping|side\ effects|overnight|shipped|the\ risks|pharmacy|pharmaceutical|adhd|magic\ mushrooms?|treating|paypal|credit\ card|shroom|polka\-dot|pros|cons|anxiety|prescription)/i
+score   DRUG_COWORDS_SUBJECT   0.5
+
+body DRUG_WORDS   /(\ dmt\ |ozempic|mushrooms|telegram|adderall|xanax|ketamine|cocaine|psilocybin|diazepam|mdma|tramadol|cannabis|valium|oxycodone|shrooms|marijuana|ecstasy|hydrocodone|fentanyl|percocet|heroin|alprazolam|ayahuasca|kush|methamphetamine|ritalin|codeine|morphine|psilocybe|dilaudid|oxycontin|amphetamine|suboxone|viagra|misoprostol|sativa|oxydrhere|cialis|purecybin|promethazine|oxycotin|clonazepam|pentobarbital|lorazepam|mescaline|etizolam|dimethyltryptamine|roxycodone|vicodin|ephedrine|ecstacy|klonopin|ambien|soma|ativan|cytotec|fioricet|indica|\ lsd\ |kush|phentermine|pentobarbital|misoprostol|cytotec|pentobarbital\ thc\ |abortion\ pills|pentobarbital|Methamphetamine|Tapentadol|Rivotril|Stilnox|zolpidem|nitrazepam|(purity.*\%|\%.*purity)|Pharmac|barbitu|spice.*spray| k2 |liquid.*incense|Pentobarbital)/i
+score   DRUG_WORDS   0.2
+
+body    URL_SHORTENERS /\/(t\.co|wa\.me|bit\.ly|he1\.me|short\.gy|\.ly|\.gy|t\.me|\.xyz|\.vip|\.gg|\t.co|wa\.me|bit\.ly|he1\.me|short\.gy|\.ly|\.gy|t\.me|\.xyz|\.vip|\.gg|urlfree\.cc|heylink\.me|linksa\.me|shope\.ee)\//
+score   URL_SHORTENERS  1.0
+
+body    SPAM_DOMAINS_COMMON /(\.(top|site|club|link|store|xyz|bz|fun)\/)/
+score   SPAM_DOMAINS_COMMON 2.0
+
+body    DRUG_COWORDS /(pills|discreet|delivery|vape|shipping|banknotes|guaranteed|currency|passport|prescription|cartridge|prices|gummies|pharmacy|psychedelic|purchase|erectile|medication|medical|dose|edibles|meds|microdose|medications|passports|dosage|grams|trippy|acid|guarantee|currencies|microdosing|tablets|strains|potent|satisfaction|delivered|infused|mcg|discrete|gram|whatsap|packaging|banknote|doses|hallucinogenic|discreetly|legit|tablet|prescribed|meanie|dosing|refund|ordering|therapeutic|potency|pharmaceutical|\/product\-category\/|wickr|prescription)/i
+score   DRUG_COWORDS   0.2
+
+header  GAMBLE_PSYCHIC_WORDS_SUBJECT    Subject =~ /(casino|\ slot|slot\ |bet\ |alternatif|gacor|maxbet|maxwin|\ spells\ |voodoo|daftar|mahjong|gampang|(love.*spell|spell.*love)|(spell.*caster|caster.*spell)|(magic.*spell|spell.*magic)|for\ hire|(buy.*cloned|cloned.*buy)|counterfeit|hitman|jawan|stream.*HD|66kbet)/i
+score   GAMBLE_PSYCHIC_WORDS_SUBJECT    0.5
+
+body    GAMBLE_PSYCHIC_WORDS    /(casino|\ slot|slot\ |alternatif|gacor|maxbet|maxwin|psychic|\ spells\ |mahjong|gampang|(love.*spell|spell.*love)|(spell.*caster|caster.*spell)|(magic.*spell|spell.*magic)|for\ hire|parlay|kasino|tiket|hanoman|dalam|kemenangan|(buy.*cloned|cloned.*buy)|(slot.*jackpot|jackpot.*slot)|(slot.*joker|joker.*slot))/i
+score   GAMBLE_PSYCHIC_WORDS    0.2
+
+body    SCAM_PATTERNS   /((bitcoin.*recover|recover.*bitcoin)|(bitcoin.*invest|invest.*bitcoin)|(professional.*hacker|hacker.*professional)|for\ sale\ in|(my\ name.*contact|contact.*my\ name)|(movie.*bit\.ly\/|bit\.ly\/.*movie)|(cyber.*hacker|hacker.*cyber)|(online.*casino|casino.*online)|(recover.*stolen|stolen.*recover)(hack.*service|service.*hack)(crypto.*hack|hack.*crypto)|(contact.*recover|recover.*contact)|\:\ http|(hacking.*cyber|cyber.*hacking)|(bitcoin.*recover|recover.*bitcoin)|http.*\/products?\/|(online.*slot|slot.*online)|passport|currency|we\ offer|we\ sell|we\ are|we\ provide|contact\ us|contact\ info|in\ stock|\%\ discount|high\ quality|tracking\ number|discreet|free\ shipping|24\/7|we\ accept|shipping|no\ prescription|(crypto.*scam|scam.*crypto)|(crypto.*broker|broker.*crypto)|(client.*recover|recover.*client)(lost.*funds|funds.*lost)|(recover.*funds|funds.*recover)|(crypto.*recover|recover.*crypto)|(lost.*crypto|crypto.*lost)|(hacker.*contact|contact.*hacker)|(lottery.*jackpot|jackpot.*lottery)|(hacker.*quality|quality.*hacker)|(hack.*recover|recover.*hack)|quality.*service(contact.*assure|assure.*contact)|contact.*http|100\%|(pay|buy).*(bitcoin|crypto)|((pay|buy).*online)|clone?.*card|(card.*credit|credit.*card)(watch|stream) here| USD | best hackers |(recover.*funds|funds.*recover)|\@proton\.me|partner.*cheating|(cheating.*contact)|contact.*whatsap| \(Full Movie\) |\/movie\/|ALTERNATIVE LINK |WATCH-online-free|\/nowbuyonline|Iniezione dimagrante |skincaremed|Acquista Mounjaro |Nächstes Produkt |Medikamenten interagieren|(jackpot.*slot|slot.*jackpot)| Click This |All Languages \| | dot (org|com)(security.*coins|coins.*security)|\/article\/(crypto.*invest|invest.*crypto)(genuine.*scam|scam.*genuine)(helped.*grateful|grateful.*helped)|\/media\/set\/\?set=a\.[0-9]{15}|buy-.*-online|order directly|fast.*delivery|-fullmovie-free-|-123movies|-watch-|\/[0-9]{6}-watch|\/node\/[0-9]{6}|\/buy-|order here|\/uploads\/|showcardetail\.net\/|\[HD [0-9]{1,5}p\]|(minutos.*stream|stream.*minutos)|\/wp-content\/uploads\/.*\.pdf|(slot.*wallet|wallet.*slot)|(bettors.*casino|casino.*bettors)|foundation\.sus\.edu\/wp\-content\/uploads\/.*\.pdf|www\.enterprise\-journal\.com\/sites\/default\/files\/.*\.pdf|eu\-de\.git\.cloud\.ibm\.com\/edu\/gov\/\-\/issues\/|clone.*card|foundation\.sus\.edu\/wp\-content\/uploads\/|\/wp-content\/uploads\/202.*\.pdf|\/sites\/default\/files\/202.*\.pdf(daftar.*slot|slot.*daftar)|nlu\=register|1th\.co\/|joy\.link|heylink\.me|Get ready to |DAFTAR |linktr\.ee\/|polatrik|(situs.*gacor|gacor.*situs))/i 
+score   SCAM_PATTERNS   0.2
+
+header  SCAM_PATTERNS_SUBJECT   Subject =~ /(LIVE ?STREAM|FREE)/
+score   SCAM_PATTERNS_SUBJECT   3.5
+
+# patterns from sa seek-phrases-in-corpus
+body    CORPUS_PATTERNS / Yuan Renminbi |where to buy | Where can I buy | to purchase |Buy 100\% | UNDETECTED COUNTERFEIT ..N|r banknotes are |. We also pr| Online Buy | the quality | best place to buy |\#LIVESTREAM |WATCH SPORT GAMES STREAM HERE |FAST EFFECTIVE| Nembutal in |nembutal pentobarbital | kaufen Sie | pentobarbital kaufen |obarbital kaufen ohne rezept| Suchen Sie nicht weiter. |Wenn Sie |Wir sind | vente libre |natriumpentobarbital\.com|y Caluanie Muelear Oxidize|. We are a | paper Cloud 9 |ext or call |caluaniemuelearoxidizeusa\.epizy\.com|caluaniestore\.42web\.io|Comment puis-je m\'assurer | Spice Paper | engagement envers |\#LIVESTREAM |-for-sale-canada|-over-the-counter|-for-sale|y Caluanie Muelear Oxidize| reliable supplier |anual and Test bank | : An Introduction to | FOR MONEY RITUAL|e I want to join | join us, | Join Illuminati |Pipe Master | Play Pipe|pipe-master-play-pipe| Kempton Park |all or watsupp | wealth and | FOR MONEY RITUAL| Illuminati in |BENEFITS GIVEN TO NEW MEMBERS WHO JOIN | INTERESTED ONES | \+27.{0,20}| \+27..5| For more info..a| Vanderbijlpark Vereeniging .e| brotherhood of | him and .{0,20}hat I wanted |KLIK DI SINI AUTO JACKPOT>>>|6 0.{0,40}9 3| sangat berguna .a| setiap hari\.| yang akan .e..a| yang sangat |Keluaran | keluar pada p|si angka togel | RAB KAM |eluaran angka yang | dalam bermain togel|291 9410 6 366 5134 7|524 1 455 2| yang tertata rapi berguna agar bettor togel .{0,5} bisa membaca .eluaran | Mounjaro | Prize Dari Master Togel | di Tabel Paito Toto |e I want to join | adalah salah satu p| togel macau |lsd-blotter-papers|e\'ve got other |\/buy-| depression and | health benefits| benefits of | effects of these .u| potentially enhance the effects |\. BalÃ¡zs Szigeti, | Deadhead Chemist| psychedelic substances/
+score   CORPUS_PATTERNS 1.2
+
+# Trying some characters
+body    T_SLATE  /ห|ใ|ổ|น|ก็|อ|ล็|คุ้|รั|มื|ว็/
+score   T_SLATE  4.0
+
+header  BASE64_BODY     Content-Transfer-Encoding =~ /base64/
+score   BASE64_BODY     1.0
+
+header  QUOTED_PRINTABLE_BODY     Content-Transfer-Encoding =~ /quoted\-printable/
+score   QUOTED_PRINTABLE_BODY     0.001
+
+body    QUOTED_PRINTABLE_CONTENT    /=E2=96=B6=EF=B8=8F|=E2=9E=A3=E2=9E=A3|=E2=9E=A4|=E2=96=BA|=F0=9F=93=B1|=F0=9F=91=89|=F0=9F=8F=88|=F0=9F=91=89/
+score   QUOTED_PRINTABLE_CONTENT    1.0
+
+header  SOLUTIONS_MANUAL_SUBJECT   Subject =~ /solutions?\ manual|case\ solution/i
+score   SOLUTIONS_MANUAL_SUBJECT    2.5
+body    SOLUTIONS_MANUAL_BODY   /solutions?\ manual/i
+score   SOLUTIONS_MANUAL_BODY   2.5
+
+# Italian spam
+header	ITALIAN_SPAM_SUBJECT	Subject =~ /PEDOFIL|BERLUSCON|MATTEO\ SALVINI|PEDERASTA|CRIMINALE|ARRESTATO/
+score   ITALIAN_SPAM_SUBJECT    2.0
+body    ITALIAN_SPAM_BODY   /PEDOFIL|BAMBINI|AVVOCATO|GIUSEPPE|LAZZARI|DANIELLE\ MINOTTI/
+SCORE   ITALIAN_SPAM_BODY   2.0
+
+# Body URI rules
+uri     URI_RULES_ONION /(vs3vh5y2aw6kqr4wvuvabka2qm6rcqoijslgnxb4mbj6xudpdffl4hyd|mq6imil4l6r7lho3ynqzxdcq2afonbyatosauxntnkm2qkjnvhurhlid\.onion|lhoktmc7tzo5khl65uj5nnr3qauxozngktt2spa6ovq5dceheludyhyd|2nhoc5qjbp5jpxdbor2rt6ue7lpyuzopm3yathjoee4ys2bgvttbwrad|docsdrcwsi3y4gv4\.onion|weedshop\.torpress2sarn7xw\.onion|gukm6235mhmwbauv3xtfz3llqm22uaaac57pmqnauxtqr67otxymx7yd\.onion|u2v7szaqxilvbqi7dq65d35w3xjx5hhszlnrk53knhwhw6d3f4rf5zad\.onion|17zGUpoX1YpYdu5a8L2evGEWE6XZcArY9B|epkutwfb6bwkvrd275utjpuzavnsrdwjdn6uzw33djlngq4vmyg7wgad|dhfk22hkwwn27obpsz22uhdyeu42b5wlkn4jlrelh75a2cgfoshkj6id\.onion|jx4lzyctp4h6yyj4bc2qemm3ce4ssxo3ftsu3ajhzdc2tipzz4gpe5id\.onion|oe2gfib2lea5lengv7pvnsdxvf4gvz3bfiglpvkhbs2i7o3a52jodwid\.onion|hztsln4fi3udznlinmxnbwdey6lbehn4sinqa6ltbu4crxgqnlzdqoid|2nhoc5qjbp5jpxdbor2rt6ue7lpyuzopm3yathjoee4ys2bgvttbwrad|lhoktmc7tzo5khl65uj5nnr3qauxozngktt2spa6ovq5dceheludyhyd|rockdzrwsfrmuyleoi35ntkx42gilktig75g6fge2rvng5kemrmhsqyd)/i
+score   URI_RULES_ONION 5.0
+
+uri     URI_RULES_01    /(cristinarossello\.it\/EN\/rfo\.html|l450v\.alamy\.com\/|lemybeauty\@dnmx\.org|www\.businesssitepage\.com|imrdsoacha\.gov\.co\/silvitra|www.ldc.upenn.edu\/staff\/denise-dipersio|www.fastpeoplesearch.com\/address\/|ketkets\.com|slainstitute\com|marijuanaonlineshopsupply\.com|bank-notes-for-sale\.over-blog\.com|radiologex\.com|www\.railgun\.ch|t\.me\/railgun|twitter\.com\/railgun_project|medium\.com\/\@Railgun_Project|dotmoovs\.com|twitter\.com\/dotmoovs|noidaescortncr\.in\/|t\.me\/larrykarius|www\.edbmails\.com\/pages\/|www\.ictsystemsllc\.com|primepowders\.net\/product|bodyroids\.store\/product|bestolie\.net\/|onlinemediaclapharma\.com\/product|trufflemushroomshop\.com\/product|www.delhihotservices.com|interphamachem.com|pyramidpens\.shop\/product\/|psychedelicshome\.live\/product|noveltydmvexperts.com\/|mushroomhousefordepression\.com\/product\/|passportidcards\.com\/|kvarmags\.com\/product|darknetmarketbuyers\.com\/product|rb\.gy\/|nextdaydeliverypharmacy\.com\/|w\.hnfosensor\.com\/|Recoverymasters\@email\.cz|qualitybills\-documents\@hotmail\.com|drpeterspellcaster22\.blogspot\.com|drpeterspellcaster\.wixsite\.com\/|www\.swiftfoxcoder\.tech|europa\-goede\-vervoerder\.com|credibledocumentsonline\.com\/|lostrecoverymaster\.com|snowden\-leaks\@tutanota\.com|imrdsoacha\.gov\.co\/silvitra|www.ldc.upenn.edu\/staff\/denise-dipersio|www.fastpeoplesearch.com\/address\/|pinkzilla\.in|callgirls.*\.com|taniasharma\.in|escortsbulletin\.com|lailaescorts\.com|www\.escortsaffair\.com|friendfinder-x\.com\/go\/|mennation\.com\/go\/|dubaiescortsservice\.net|sexydatingwomen\.com|adultfriendfinder\.com\/go\/|hornywife\.com|sexfinder\.com|stevemedsstore\.com\/|WWW\.KINGTRUST\.TO|buythcvapejuicecartsonline\.com\/|exoticcartsonline\.com\/|buypsilocypsychedeliconline\.com\/|anglezzzzzzz\.likesyou\.org\/|christyansworld\.atwebpages\.com\/|youthmeetupplace\.talk4fun\.net\/|kohtumispaik3\.66ghz\.com\/|buypsychedelicsonline\.net\/)/i
+score   URI_RULES_01    3.0
+
+uri     URI_RULES_SPAM    /(browsegrades\.net\/|www\.stuvia\.com\/|confirmedchemicals\.com\/)/i
+score   URI_RULES_SPAM    8.0
+
+# Drug or hacking related (body)
+body    SPAM_LINKS_01    /(\/public\/WATCH\-|\/lin\.ee\/|egcasino88|sacluxcomptechspecialst|\/dik\.si\/|SAKURATOTO2|killhacks|peeterhacks|hacksp007|bola88|daftar |\/mez\.ink\/|\/mssg\.me\/|7metercuan|lyfechemist|getyourpharmacy\.com\/|Onebet303|glod881|shorturl\.asia\/|liong168|Bagus88|Panadaslot88|Galaxy898|ok88-som|dewalive|\/1z\.tel\/|\/gamma\.app\/|www\.invadent\.com|livgolfclub\.com|cutt\.ly|the88th\.comv|beacons\.ai|joy\.link\/|club\.vexanium\.com\/|taplink\.cc\/|lit\.link\/|linkr\.bio\/|jagoanmanis\.click\/|linkaku\.pro\/|pastionline\.com\/|jowototo88|linkr\.bio|linkgacor\.link\/|\.timely\.fun\/|2mjykingdom\.com\/|geetanjalihomestate\.co\.in\/|\/page\.line\.me\/|\/replit\.com\/|lemybeauty|t\-links\.org\/EZjAi12N|cinerpharma\.com\/product|\.onlinexdate\.com|hackerrank\.com\/|requitalfinance\.com\/|carepremiere\.com\/|trusthealthshop\.com\/|tipstrikmudah\.theblog\.me\/|hayo\.com\/article\/|gopainpill\.com\/|sway\.office\.com\/|rehabkit\.org\/|180tabs\.com\/|72hrspills\.net\/|societylink\.org\/|www\.alpharcforsale\.com\/|eagleviewfirearms\.com\/|originalmotorparts\.com\/|edusight\.ae\/|provenexpert\.com\/|www\.pressregister\.com\/|ateliersansfrontieres\.org|nairaland\.com\/|pede\.4tv\.live\/|valori\.it|coinidol\.com|678924920|m\.avive\.world\/|dmtcartsofficial\.com\/|psychedelicminds\.shop|trippinbros\.com\/|\/cricket247\.net|\/cricketfastline\.net|browsegrades\.net\/\/polkadot\-magic|mushroomsshopflorida\.com|dmtcartsofficial\.com|dmtcartridges\.com|buydriedmagicmushroom\.com|psychedelicdominion\.com|delta8vapesshop\.com|delta8vapesshop\.com\/|topshelfweedshop\.com\/|methamphetaminebox\.com\/|passionweed\.site|methamphetaminebox\.com|27733399345|cheapdarknetmarket\.com|trippyfantasy\.com|goldenretrieverwelpen\.com\/|psychedelicgalaxy\.com\/|au\-psychedelics\.com\/|lerrymushrooms\.shop\/|cheapdarknetmarket\.com\/|officialpolkadots\.com\/|247shopmart\.org\/|www\.cureus\.com\/|genious\-shop\.com\/|pills2days\.com\/|nuheals\.com|aljayyusisanad9|rxgoldenpharmacy\.com\/|fastwellnessshop\.com\/|dinasty88group\.com|fastwellnessshop\.com\/|buymushroomschocolatebars\.com\/|schmerzmittelkaufen\.com\/|wegovykopen\.com\/|official\.link\/|\/rebrand\.ly\/|researchnews\.cc|wolfstudiosmke\.com\/|weberqueerarchives\.org\/|scoop\.it\/topic|tryplayingslots\.com|\/bily\.top\/|carepremiere\.com\/|988login\.co\/|euthanasiadrugs\.com\/|woi\.gg\/|direct\.lc\.chat\/|slot977asli\.com|google\.com\/g\/linktop|\/p\/download\-ebook\-pdf|qr\.ae\/|\/j88s\.usun\.cash|\/jali\.me|\.euthagroup\.org|\/grailcannabis\.ca\/|\/baskadia\.com\/|\/raindropevents\.com|\/www\.liveworksheets\.com|\/www\.exploringthenorth\.com|\.mypressonline\.com\/|\/yanit\.net\/|toptanihracat\.com\/|\/wittyhealthy\.com|123moviesclub\.to\/movie\/|pgslot\.com|\.clickbank\.net|\/carthings\.in\/|\/exoticcartsonline\.com\/|\/stevemedsstore\.com\/|\.ultrapsychedelic\.org\/|\/primepsychedelicz\.com|\/heartbeatchurch\.be\/|\.highpuremed\.com)/i
+score   SPAM_LINKS_01    3.0
+
+body    SPAM_NAMES_01    /(53E3tOeeuayBq6EG|vivaslotgegergeden|drsikama|teckwebservices|drmark396|Cybernetsurveillance|cybertraceservice|leeultimatehacker|Adrianlamo|prowizardgilbertrecovery|wizardjamesrecovery|REMOTESPYWISE|mightyyuri|spyhackelite|ALPHAHACK727|HARVEYDONALD192|dinar.?sarker|TECHSPYHACKERPRO|Hackingprofessional3|MONEYRECOVERY001|Recoverywizardmayemusk|hackerone975|Wongbestwizard|(hacker.*professional|professional.*hacker)|codercyberservices|(bitcoin.*stolen|stolen.*bitcoin)|(bitcoin.*retrieve|retrieve.*bitcoin)|slothacker62|62hackerslot|ltobetcom|Zeus123 |Okbet99|devo88|Torpedo4D\-|jakcpotnya |mantabbetul|Movie\-Free\-Online|Oyo4d|totohongkong|MUSEUMTOTO|zodiakhoki|CEBANBET|ceban4d|globalpharmag|Nivolumab|SALDO4D|famousastrologerinindia|bl88th|UANG888|jualanbuah|RTPslot|STASIUNPLAY88|sexybaccarat168|untungkoin|buyozempiconline|KOMENGTOTO|66kbet|jalurlogin|( [0-9]{3}[A-Za-z]{3} | [A-Za-z]{3}[0-9]{3} )|areaslot4d| Situs |judi\-gacor|gacorr|japriboncabe| Slot Thailand |siap46| SPELL CASTER |priestjoesolution|𝗦LEDOVAŤ| \| 720P HD \| |𝗦ledovat|gscqnz4u|jeandugale|AJAIB368|webajaib368|seowahana|DORAHOKI| permainan |BOMJITU|daniel2380|asdaservices24|jamesmillerrecovery|MBSTOTO|mbstogel|BAHAGIA|bosdiamond|king138|ORspice|Full Movie Free |\|Watch |01streamm4u|WATCH HERE |DOWNLOAD NOW |8ballpool| daftar |checkscore360|jakseltoto|cumi4d|smithjaden362|bnidigital|k2sheetsforsale|k2sheetspice|k2spicepaper|ADAMTOTO|CLICK HERE: |OLXTOTO|globalresearchphamarcy|legithus|livechatluwakpoker|\/tabid\/|\/i\.ibb\.co\/|vegasslot808|situs.*jackpot|kampung138|SRIKANDIQQ|sgcwin77|Jokerbola|yolo4d|\/flx\.im\/|Lucky Clover |\/1z\.tel\/|Lucky Neko|LINK GOKIL: |diva4d|Menara\-?3388|albertonolan2075|PASAPORTE REAL |Merpati77|Minion8|Merpati77|Nemo4d|Nagaslot777|isikolo|applemerch|12014305865|17736092741|danielmeuliweberecovery|seychellesrecoveryexpert|MARKWIZARD\@|\@SOLUTION4U.COM|spyhackden|drlucasspelltemple|jethacks.*recovery|J\ e\ t\ h\ a\ c\ k\ s|TECHSPYHACKERPRO|MATTDUNHAM928|marianspells|hipsandbumsenlgement|maya\-?aprianaya|100092647912835|EDETANLEN|Validclonedcardsforsale|counterfeitmoneyonline26|Kelvinloidon|ivqtab9v|gitlab-org\/growthproject|ptpkaksmcuh|awaseherbalhome|technocratrecovery|seychellesrecoveryexpert|tt9362930|onemoviesxyz|Bandar-Judi-Slot-Gacor-Terbaik|soniaagathe|WATCH NOW FOR FREE |onemoviesxyz|M\.o\.V\.i\.E|gearheadengineers|wizardwebrecovery|xf5fjyhvq6wyjf3i|darknetbusinessdeals|hackservice@|\@colaexchange|actavisplug4sale|drugmedsforsale|miles\ market|realdocuments\@|\@realdocsonline|realandfakedocs|darknetdocsforsale|wainpharmacy|covid19pharmacy|\@deepweb45|Apollo0607\@|buds_bran2011|x14PdY55sK|v9MShl2i2s|\@ghostplug03|globalcertification1\@|globaljack1|RadiologexOfficialGroup|cybilltritech\ AT\ protonmail\ DOT\ com|legitplug25|fanaticahack|jinxproof2\@gmail\.com|strongestman222|hackersforce\@protonmail\.com|majidbuda1\@|Ranko322|recoveryexpert\ \@|support\@lostrecoverymaster|applemerch|darkgunweeep2epr|topnotchdrugz|\@valiumket\.com|heizenkemz|4everheizen\@gmail\.com|craigslistfortrust1|caregivers420|33ndja7v5retuxca|mlbfacecoverings\.com|Mlb Logo Face Masks|\@willyjones01|generalcertification123\@protonmail.com|g1431112-pmoc|\@Konami4|buycounterfeitmoneindia|sbwatkins1214\@yahoo\.com|dipersio\@ldc.upenn.edu|castrodavivienda|Luiscastrovzla7|drugporn0|quarantineplug1\@|webaqp4igb7miec7|royaltymarket1|Tweakersunited|Contractorx\@|zshepherd\@|@medicalweedhome|cvvhacker450\@gmail\.com|\@bestseller505|cid\.38726875f620f89e|237692308844|albertgonzalez0001\@gmail\.com|dc7d7F3qyRAxZmUx|buyclonedcardsatm|Sellingcvvdumppaypalbanklogin|SellingDumpsandcvv|683485306|84932475671|\@bigshop79|authenticdocs50\@yandex\.com|\@biggertrader50|237692308844|wandb\.ai\/|techwebservices\@|remotespywise|\/legicalempiremarket|\@fasthookup102|13238348961|84774511893|\/jackhieu|\/Distrola25|12134540947|\#buy.....|13039002495|\/gamesensicaIs|\/officialsense|\/buypsychedelicdrugs|psychedelicmushroomtrippy|tipstrikmudah|EksplorasiKota|\#Bandung|elitetechhacker|cup88|HW77SLOT|\/view\/nexobets|\#mmbetween|\/1th\.co\/[a-z]{5}|\@Carlo\_kush|Mahadewa88|pnbereit.*\@.*duck|kingslot169|(kekayaan|mengunakan).*dengan|dengan.*(kekayaan|mengunakan)| SA138 |SUKI99|XOSlot|sbobet|ufabet|vodka138|temanjp|finvestfortune|votreequilibrecorporel|luckybearnumber\/|gclubmob|8003350498|177918191|lodifirststeps|pik4d\-1a|IBRAHIMFINLEY8|\/WaTcH\-MOVIE\-|vunca8pp|K98JC7U8|sohotogel|\/Optimus88|Mega88|istana168|\/730txdri|\/Mega118|\/Mega338|\/nufilm\.live\/movie\/|Mentos4d|tomcyberghost|Swiftxasset|VIPDewa|\/Bajaj4d|7msportvn|dougfoster543|Hero138|Gocek88|crakercyberdude|Doyan303|GearHead Engineers |idealciceksepeti|haberduyur|Dakika Haberler|yuvatasiyoruz|Cybrespirit|digitaltechacker|dwpkjitu|dewapoker|Leobola|play338|muriara28|edmondhealthnyc|indosuper|kartuGG|mz7cic3g|santoshihacker|pg slot |kayapharmaceutical|indopride88|Sakti55bt|Toto88|lissatripstore|bajudinasmalam|\#ibomacau|\#mahkotaasia|nagapoker|remipkr887| Coolkiid|Sakti55bt| 356\-8145|remipkqq|remipoker|remipkrqq|terbaikslot|remiqqpk|91\-9799970393|blackmagicspecialist|Pria4d|hajar4d|hd4flex|gungungupta137|\+1567\-334\-1570|lauraviviane20|hotspin69|2782 83675 70|916(\(|-)304-5082| 4806227609| 356-8145|14242408330|14242425468|442080403156|27630305501|gardorichardo|\+27788804343| MUTHI SHOP |bos89slot|\+256754770544|\+256788015516|bintang5toto|256 766 289290|asia9999|joker1234|SHIENSLOT|bosslot99|bandarjaya|Elvish_|highschoolimac|9haetatranha|monsflorpdiuyu|antonnio7001|33777279948|mz7cic3g|729858391|447451221912|miyaa4d|ling138|dollar4d|pragmatic313|bocoran|mz7cic3g|stonermed|CCdumpcom|\@Pax_?pod|kodokhokislot|089601111772|256707474649|tcealq47|MX8ESP4F|fe7dqqbj|klik555|abaherbalhome|KIJKEN\-|bebaszona\-|zonaportal|megahoki88|solutionbanknotes|35796898042|pokerowy|pokerze|linetogel|7737454646|9636763351| BWG77|Screenwaze|snflstreamsonrdt|NeuroZoom |RAJATOTO88|1\-?850\-?604\-?0024|QQINDAH|Terpercaya|1.?854.?201.?1855|1.?945.?468.?9977|QQIndah|1.?888.?526.?0444|905448212712|RINDUSLOT|wegovy.?kaufen|wegovy|lawofattraction|1-888-422-7533|MOCIBET|Glucoberry|Glucotrust|JAKJP|Mywnu2yvO4WldHj|monopoly(-| )go(-| )free)/i
+score   SPAM_NAMES_01    3.0
+
+header  SPAM_HEADER_NAMES_01    Subject =~ /(91\-8437560891|91\-7878487160|Jamnagar|indore|jaipur|hajar4d|gungungupta137|\+1567\-334\-1570|hotspin69|2782 83675 70|916\(|-\)304-5082| 4806227609| 356-8145|14242408330|14242425468|442080403156|27630305501|14242348942|gardorichardo|\+27788804343| MUTHI SHOP |\+256754770544|\+256788015516|bintang5toto|256 766 289290|asia9999|joker1234|SHIENSLOT|bosslot99|bandarjaya|Elvish_|highschoolimac|9haetatranha|https\:\/\/groups\.google\.com\/g\/|monsflorpdiuyu|antonnio7001|33777279948|vunca8pp|K98JC7U8|\[LiveStream\]|729858391|447451221912|pragmatic313|bocoranstonermed|CCdumpcom|256707474649|tcealq47|MX8ESP4F|fe7dqqbj|klik555|KIJKEN\-|bebaszona\-|zonaportal|megahoki88|35796898042|pokerowy|pokerze|linetogel|7737454646|9636763351|420721164969|58496401| BWG77|\[WATCH|Screenwaze|snflstreamsonrdt|NeuroZoom |RAJATOTO88|1\-?850\-?604\-?0024|QQINDAH|Terpercaya|1.?854.?201.?1855|1.?945.?468.?9977|QQIndah|1.?888.?526.?0444|905448212712|1.?[0-9]{3}.?[0-9]{3}.?[0-9]{4}|RINDUSLOT|wegovy.?kaufen|wegovy|lawofattraction|1-888-422-7533|MOCIBET|Glucoberry|Glucotrust|JAKJP|605-318-7664|1 \(850\) 331-1331|1 \(806\) 425-2438)/i
+score   SPAM_HEADER_NAMES_01    4.0
+
+body    SPAM_COMMON_01   /(Link (Alternatif|Slot|Gacor):|(Link: (Alternatif|Slot|Gacor))|LINK OFFICIAL|LINK DAFTAR|=F0=9F=94=97|=F0=9F=93=8C|https\:\/\/heylink\.me\/|https\:\/\/woi\.gg\/| situs | gacor | langsung | mendapat |nagapokerpanenhoki|\-FullMovie\-(Online|Free)\-|FULLMOVIE\-ONLINE|\/scratch\.mit\.edu\/projects\/[0-9]{9}| terbaru |\/joy\.link\/|\#slot|\/magic\.ly\/|\/rentry\.co\/|\/he1\.me\/|\/pigpg\.co\/|\/golink\.icu\/|\/he1\.me\/|14242348942|\/es\.surveymonkey\.com\/|=F0=9F=93=9E|\/public\/Watch\-|\/streamhd\.top\/|\/usmoviestoday\.com\/movie\/|buyonlydmt\.lived|https\:\/\/replit\.com\/\@|\.flyzoneug\.com|\/horsesaddleshop\.org\/product|https\:\/\/cinemablend\.site\/tr\/movie\/|hack0wn\.com|Regarder ➡ |Telecharger ➡ | GAMPANG |www\.yourquorum\.com\/| 100\% gratuit|Télécharger |hotflix\-32\.org\/ro|cinemablend\.site\/|\-FuLLMovie\-| Watch Live |Watch here |hd\-live\-nfl\-streaming\.html|www\.stillpoint\.ie\/group\/|ideas\.powerautomate\.com\/|惊奇队长2|无价之宝|拯救嫌疑人|吾爱敦煌|无价之宝 香港電影|dazntv24\.live\/|storiescover\.com\/|afiletoget\.click\/|freecrackedgamesblog\.wordpress\.com\/|▶️|✅|👉|📞|💥|xvo\.pl\/| pokerze|slot[0-9]{2,3}|\| 4K UHD |\| 1080P-HD |\| 720P HD |\| MKV |\| MP4 |\| FLV |\| DVD |🔥|📌|➡️| Neuro Balance Therapy| risk-free |What (is|are).*Conclusion\: |How to Watch|How to Download |hindi ?subbed)/i
+score   SPAM_COMMON_01   3.0
+
+body    SPAM_LINKS_02    /(\.blogspot\.com\/\?download\=| Zuket |Download File \>|https\:\/\/urlin\.us\/|siyakudumisa|https\:\/\/bytlly\.com\/|https\:\/\/tinurll\.com\/|2Furlin\.us\%|2Fbyltly\.com\%|\/byltly\.com\/|\/fancli\.com\/|\/inutegyu\.blogspot\.com\/|\/bltlly\.com\/|\/reurl\.cc\/|\/lnkiy\.in\/|\/bityl\.co\/|\/cinema\.moviewc\.xyz\/|\/yourflixhub\.com\/18400\/watch\.php\?|\/buyhpills\.com\/|\/page\.line\.me\/|stream\.moviezee\.me\/|carolinahuddle\.com|nairaland\.com|brocoveragetv\.com\/|imgfil\.com|emcomcapa\.blogspot|billing\.zuzz\.tv\/|sportshubtv\.xyz\/|linkkakekzeus\.com|gajadinikah\.com|goto4d2\.com|hayugass\.com|stonersmeds\.com\/|fr\.4dxstream\.com\/|world\.moviewc\.xyz\/|tlniurl\.com|xcinema\.boxmovies\.club\/|www\.click4r\.com\/|www\.bitsdujour\.com\/|newsdailyfilm\.hashnode\.dev\/|bestones\.icu\/|expresssportshub\.com\/|linklist\.bio\/|highschoolatef\.blogspot\.com\/|journals\.plos\.org\/|journals\-plos\-org|jp39723\.com\/|\/freelinee|\/smsiz\.com|\.landing\-system\.com\/|wat\-32\.icu\/|applox\.org\/|\.sourcelearns\.com\/|\.articlebot\.net\/|cineplex\.beefilm\.stream\/it\/movie\/|torostream\.xyz\/|sports\-today\-broadcast\.blogspot\.com\/|sports2tv\.live\/|\/xvo\.pl\/|marcolinks\.click\/|\.moviewc\.xyz\/|\/vapecartsmasters\.com\/|\/xvo\.pl\/|trendycartridges\.com\/|\/xvo\.pl\/|forum\.contentos\.io\/|www\.eva\.ro\/forum|forum\.webnovel\.com\/|telegra\.ph\/|\/7plustv\.com\/|\/espnuhd\.com\/|\/todaystreamingtv\.com\/|\/hix\.ai\/|\/surelink\.online\/|\/bizsantosh\.com\/|\/replit\.com\/|\/157\.230\.192\.182\/|\.bluehavenlux\.com\/|\/meet\.jit\.si\/|\/kinopio\.club\/|wwvy1ew7md9|fsf\@LkoBDZeT|\/hix\.ai\/|\.topstream10\.com\/|\/onlinetvcast\.fun\/|\/officialpolkadotcompany\.com\/|\/primo\-iptv\.com|\/hix\.ai\/|\/bwg77oke\.com|\/cflgreycuptv2023\.blogspot\.com|\.credistore\.id\/|\/max\.topstream10\.com\/|\/geni\.us\/|\/getstreamnow\.com\/|\/onlinesportstv\.live\/|empirellc\.com|\.nufilm\.live\/|\/justwatchnow\.fun\/|\/digeebooks\.com\/|\/hafug\.org\/|\.tradesia\.com\/|\/geni\.us\/|\/mydealsjunction\.info\/|\/healthnewz\.xyz\/|\/wegovykaufenmarket\.com\/|\/shorturl\.at\/|\/hypergen\.click\/|\/digeebooks\.com\/)/i
+score   SPAM_LINKS_02    3.0
+
+header  AIRLINE_SPAM_SUBJECT    Subject =~ /(how to contact | speak to a (live|real) person at ).*Airlines/i   
+score   AIRLINE_SPAM_SUBJECT    4.0
+
+header  PHONE_IN_SUBJECT    Subject =~ /([0-9]{3}.?.?[0-9]{3}.?[0-9]{4})/
+score   PHONE_IN_SUBJECT    4.0
+
+# IT spam
+body    ITSPAM2		/\[\/url\]|\[url\=|\]http/i
+score   ITSPAM2		0.5
+
+# doxing
+body D_DOX1		/lea_walid_777/i
+score	D_DOX1		4.0
+body	D_DOX2		/358\ 465268803/
+score	D_DOX2		5.0
+
+# negative for drugs
+body    DRUGS_NEGATIVE		/pharmaceutical|doctor/i
+score	DRUGS_NEGATIVE		-0.2
+
+# contact links and domains etc.
+body    CONTACT_LINK    /whatsapp|whats\ app|\@protonmail|wickr\ id|telegram|jabber|ic2|\.onion|\.shop\//
+score   CONTACT_LINK    0.2
+
+# Random shit
+body RS_SHIT1	/^[a-zA-Z0-9_]{6}\ \ <a href="http:\/\/[a-z]{12}\.com\/">.*\[url=http:\/\/[a-z]{12}\.com\/.*\[link=http:\/\/[a-z]{12}\.com\//
+score	RS_SHIT1	5.0
+
+score ALL_TRUSTED 0
+
+#   Add *****SPAM***** to the Subject header of spam e-mails
+#
+# rewrite_header Subject *****SPAM*****
+
+
+#   Save spam messages as a message/rfc822 MIME attachment instead of
+#   modifying the original message (0: off, 2: use text/plain instead)
+#
+report_safe 0
+
+remove_header all Status
+#remove_header all Report
+
+#   Set which networks or hosts are considered 'trusted' by your mail
+#   server (i.e. not spammers)
+#
+# trusted_networks 212.17.35.
+
+
+#   Set file-locking method (flock is not safe over NFS, but is faster)
+#
+# lock_method flock
+
+
+#   Set the threshold at which a message is considered spam (default: 5.0)
+#
+required_score 6.0
+
+
+#   Use Bayesian classifier (default: 1)
+#
+# use_bayes 1
+
+
+#   Bayesian classifier auto-learning (default: 1)
+#
+# bayes_auto_learn 1
+
+
+#   Set headers which may provide inappropriate cues to the Bayesian
+#   classifier
+#
+# bayes_ignore_header X-Bogosity
+# bayes_ignore_header X-Spam-Flag
+# bayes_ignore_header X-Spam-Status
+
+#   Whether to decode non- UTF-8 and non-ASCII textual parts and recode
+#   them to UTF-8 before the text is given over to rules processing.
+#
+# normalize_charset 1
+
+#
+#   default: strongly-whitelisted mails are *really* whitelisted now, if the
+#   shortcircuiting plugin is active, causing early exit to save CPU load.
+#   Uncomment to turn this on
+#
+
+shortcircuit    ABAVIA_BOT on
+tflags ABAVIA_BOT noautolearn
+
+shortcircuit    URI_RULES_SPAM  on
+tflags  URI_RULES_SPAM  noautolearn
+
+# shortcircuit USER_IN_WHITELIST       on
+# shortcircuit USER_IN_DEF_WHITELIST   on
+# shortcircuit USER_IN_ALL_SPAM_TO     on
+# shortcircuit SUBJECT_IN_WHITELIST    on
+
+#   the opposite; blacklisted mails can also save CPU
+#
+# shortcircuit USER_IN_BLACKLIST       on
+# shortcircuit USER_IN_BLACKLIST_TO    on
+# shortcircuit SUBJECT_IN_BLACKLIST    on
+
+#   if you have taken the time to correctly specify your "trusted_networks",
+#   this is another good way to save CPU
+#
+# shortcircuit ALL_TRUSTED             on
+
+#   and a well-trained bayes DB can save running rules, too
+#
+# shortcircuit BAYES_99                spam
+# shortcircuit BAYES_00                ham
+
+#endif # Mail::SpamAssassin::Plugin::Shortcircuit

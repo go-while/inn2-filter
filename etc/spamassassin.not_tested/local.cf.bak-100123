@@ -1,0 +1,409 @@
+# This is the right place to customize your installation of SpamAssassin.
+#
+# See 'perldoc Mail::SpamAssassin::Conf' for details of what can be
+# tweaked.
+#
+# Only a small subset of options are listed below
+#
+###########################################################################
+
+# my rules
+# disable these
+score MISSING_HEADERS 0
+score NO_RECEIVED 0
+score URIBL_BLACK 0
+score URIBL_RED 0
+score URIBL_GREY 0
+score URIBL_BLOCKED 0
+score DKIM_ADSP_NXDOMAIN 0
+score DKIM_ADSP_ALL 0
+score NO_RELAYS 0
+score MISSING_DATE 0
+score MISSING_MID 0
+score MISSING_SUBJECT 0
+score MISSING_FROM 0
+score FROM_ADDR_WS 0
+score SERGIO_SUBJECT_PORN014 1
+score DKIM_ADSP_CUSTOM_MED 0
+score DKIM_ADSP_DISCARD 0
+score FORGED_GMAIL_RCVD 0
+score NML_ADSP_CUSTOM_MED 0
+score HEADER_SPAM 0
+score FREEMAIL_ENVFROM_END_DIGIT 0
+score FREEMAIL_FROM 0
+score FREEMAIL_FORGED_REPLYTO 0
+score FREEMAIL_REPLY 0
+score FREEMAIL_REPLYTO 0
+score HK_RANDOM_FROM 0
+score FREEMAIL_REPLYTO_END_DIGIT 0
+score FREEMAIL_FORGED_FROMDOMAIN 0
+score REPLYTO_WITHOUT_TO_CC 0
+score RCVD_IN_PBL 0
+score RDNS_NONE 0
+score HELO_NO_DOMAIN 0
+score TO_NO_BRKTS_PCNT 0
+
+# mods
+score AC_FROM_MANY_DOTS 1.0
+score MSGID_RANDY 0.5
+score SHORT_SHORTNER 0.5
+score PDS_FROM_2_EMAILS 0.5
+score ADVANCE_FEE_3_NEW_MONEY 0.5
+score ADVANCE_FEE_2_NEW_MONEY 0.5
+score ADVANCE_FEE_3_NEW 0.5
+score HK_SCAM 0.5
+
+# whitelist
+#header  NOCEM01 Injection-Info =~ /NldoW2UyBoOKvhpjhx8ZqwFSk3qwC1\/zY5dPdL0q3CU/
+#score   NOCEM01 -8.0
+header  NOCEM_GROUPS  Newsgroups =~ /news\.lists\.filters|rocksolid\.spam|i2pn\.spam/
+score   NOCEM_GROUPS  -5.0
+header  FROM_RSLIGHT_NEWS_FEEDS_NOVABBS  From =~ /usenet\@novabbs\.org\ \(rslight\ rss\ feeds\)/
+score   FROM_RSLIGHT_NEWS_FEEDS_NOVABBS -5.0
+header  FROM_NOVABBS_NOCEM  From =~ /novabbs\-nocem\ \<nocem\@novabbs\.com\>/
+score   FROM_NOVABBS_NOCEM -5.0
+
+# servers
+header  SERVER_NL2K     Path: =~ /POSTED\.doctor\.nl2k\.ab\.ca\!not\-for\-mail/
+score   SERVER_NL2K     0.001
+header  SERVER_GGROUPS  Path: =~ /groups\.googlegroups\.com\!not\-for\-mail/
+score   SERVER_GGROUPS  0.5
+
+# users
+body	CHECKMATE01	/Always\ wear\ ANSI\ approved\ safety\ goggles/
+score	CHECKMATE01	0.001
+header	CHECKMATE02	X-No-Tinkerbells =~ /Yes/i
+score	CHECKMATE02	0.001
+
+header  PURSENT_FROM    From =~ /pursent100\@gmail\.com/i
+score   PURSENT_FROM    0.001
+
+# newsgroups
+header  ALT_ARTS_POETRY_COMMENTS  Newsgroups =~ /alt\.arts\.poetry\.comments/
+score	ALT_ARTS_POETRY_COMMENTS  -5.0
+header  REC_ARTS_DRWHO  Newsgroups =~ /rec\.arts\.drwho/
+score   REC_ARTS_DRWHO  0.001
+header  ALT_HOME_REPAIR Newsgroups =~ /alt\.home\.repair/
+score   ALT_HOME_REPAIR 0.001
+
+# poison crossposting
+header  TAINTED_GROUPS  Newsgroups =~ /rec\.crafts\.metalworking|rec\.arts\.tv|uk\.d\-i\-y|\.os\.|alt\.home\.repair|sci\.electronics\.design/
+score   TAINTED_GROUPS  0.001
+header  POISON_GROUPS   Newsgroups =~ /politics|limbaugh|\.guns|alt\.checkmate|free\.spam/
+score   POISON_GROUPS   0.001
+header  NO_GGROUPS_GROUPS Newsgroups =~ /comp\.lang\.python|alt\.comp\.freeware/
+score   NO_GGROUPS_GROUPS   0.001
+
+# newsgroups meta rules
+meta    POISON_AND_TAINTED_META  TAINTED_GROUPS && POISON_GROUPS
+score   POISON_AND_TAINTED_META  6.0
+meta    NO_GGROUPS_META NO_GGROUPS_GROUPS && SERVER_GGROUPS
+score   NO_GGROUPS_META     8.0
+meta    NL2K_OR_PURSENT_AND_REC_ARTS_DRWHO REC_ARTS_DRWHO && (SERVER_NL2K || PURSENT_FROM)
+score   NL2K_OR_PURSENT_AND_REC_ARTS_DRWHO 8.0
+
+meta    NO_CHECKMATE_META   (TAINTED_GROUPS && (CHECKMATE01 && CHECKMATE02))
+score   NO_CHECKMATE_META   8.0
+
+# from header
+header  BAD_FROM_SPAMMER    From =~ /(vvgrant886|jainelectro|georgethecockroach\@gmail\.com|manta103g\@gmail\.com)/i
+score   BAD_FROM_SPAMMER    8.0
+
+header  BAD_FROM_USER    From =~ /(david.*nomail\.afraid\.org|David.*Devon|David\ \<David\@invalid\.address\>|BDB\@invalid\.invalid|always\.look\@message\.header|CK1\@nospam\.com|brock\.mcnuggets\@gmail\.com|nobody\@haph\.org|Steve\ Carroll.*@noSPAM\.)/i
+score   BAD_FROM_USER    8.0
+
+header  BANNED_GG_SPAMMER  Injection-Info =~ /(AZVWTQoAAAAiaKdlREBksF1nylYyrTO7|EwES5QoAAAAe20cvd7WrOpWp2Jccefcz|fTQJigoAAADEDiotpEfpBMQqMuRK5iHt)/
+score   BANNED_GG_SPAMMER   8.0
+
+header  BANNED_GG_TSBRUENI  Injection-Info =~ /googlegroups\.com.*posting\-account\=(0H2MhQkAAACjzm5V7VzdZxt6y7KEcGTO|\-9vEjwkAAAAAl7fAFmEI9nNq0TWjawxm)/
+score   BANNED_GG_TSBRUENI  8.0
+header  BANNED_GG_SNIT_ETC  Injection-Info =~ /googlegroups\.com.*posting\-account\=Vm0uAgoAAABvTYeieyl4GElbOkHDqJYr/
+score   BANNED_GG_SNIT_ETC  8.0
+header  BANNED_GG_CHROMEBOOKTEST  Injection-Info =~ /googlegroups\.com.*posting\-account\=o2cmcgoAAACqKDR0b5D3Azx\-dE22zols/
+score   BANNED_GG_CHROMEBOOKTEST  8.0
+header  BANNED_GG_RICHA  Injection-Info =~ /googlegroups\.com.*posting\-account\=8Vsz\_woAAABQPV3Epo66m_rYvK1EHzOV/
+score   BANNED_GG_RICHA  8.0
+header  BANNED_GG_BRUCE_BOWSER  Injection-Info =~ /googlegroups\.com.*posting\-account\=(dz0JQQoAAAA2SfqNJpOpSErFeZa0iD4P|ObX2PwoAAAA0kjITr5fR5JSdfi9swsT\_)/
+score   BANNED_GG_BRUCE_BOWSER  8.0
+
+header  DANIEL_DR_WHO   Injection-Info =~ /eternal\-september\.org.*posting\-account\=\"U2FsdGVkX1\+DocMiS0yd8EheM6k727\/dKpF\/xUJ0Mcg\=/
+score   DANIEL_DR_WHO   0.001
+body    ASSWIPE_DANIEL  /asswipe/i
+score   ASSWIPE_DANIEL  0.001
+meta    ASSWIPE_DANIEL_AND_DR_WHO   DANIEL_DR_WHO && (ASSWIPE_DANIEL && REC_ARTS_DRWHO)
+score   ASSWIPE_DANIEL_AND_DR_WHO   8.0
+
+# Random users header info (including meta)
+header  USER_AGENT_STOOPEY    User-Agent =~ /St0opey\'s/
+score   USER_AGENT_STOOPEY    0.01
+header  FROM_DERSHMENDER    From =~ /Dershmender/
+score   FROM_DERSHMENDER    0.01
+meta    STOOPEY_DERSHMENDER_META    USER_AGENT_STOOPEY && FROM_DERSHMENDER
+score   STOOPEY_DERSHMENDER_META    5.0
+
+header	SNOWFLAKE01		Subject =~ /Snowflake/
+score	SNOWFLAKE01		0.01
+tflags	SNOWFLAKE01		multiple maxhits=21
+meta	META_SNOWFLAKE01	SNOWFLAKE01	> 20
+score	META_SNOWFLAKE01	5.0
+
+body    BODY_UTF_DATA_01        /\+Ps\+\+4j\+KAjfCfjIg/
+score   BODY_UTF_DATA_01        0.01
+tflags  BODY_UTF_DATA_01        multiple maxhits = 11
+meta    META_UTF_DATA_01     BODY_UTF_DATA_01 > 10
+score   META_UTF_DATA_01     5.0
+
+# sex
+header	RS_DATING	Subject =~ /(women|girls|dating|looking).*(sex|fuck|\|)/i
+score	RS_DATING	5.0
+header	RS_DATING2	Subject =~ /Girls\ Looking\ Men/i
+score	RS_DATING2	5.0
+header	RS_DATING3	Subject =~ /Meet for.*(NSA|\|).*(Girls|Women|Date)/i
+score	RS_DATING3	5.0
+header	S_DATING	Subject =~ /Dating/i
+score	S_DATING	1.0
+
+# drugs dating gambling other
+header  DRUG_WORDS_SUBJECT   Subject =~ /(\ dmt\ |ozempic|mushrooms|telegram|adderall|xanax|ketamine|cocaine|psilocybin|diazepam|mdma|tramadol|cannabis|valium|oxycodone|shrooms|marijuana|ecstasy|hydrocodone|fentanyl|percocet|heroin|alprazolam|ayahuasca|kush|methamphetamine|ritalin|codeine|morphine|psilocybe|dilaudid|oxycontin|amphetamine|suboxone|viagra|misoprostol|sativa|oxydrhere|cialis|purecybin|promethazine|oxycotin|clonazepam|pentobarbital|lorazepam|mescaline|etizolam|dimethyltryptamine|roxycodone|vicodin|ephedrine|ecstacy|klonopin|ambien|soma|ativan|cytotec|fioricet|indica|\ lsd\ |kush|phentermine|pentobarbital|misoprostol|cytotec|pentobarbital|\ thc\ |abortion\ pills|pentobarbital|Methamphetamine)/i
+score   DRUG_WORDS_SUBJECT   2.0
+
+header  DRUG_COWORDS_SUBJECT    Subject =~ /(buy|purchase|online|where\ can\ |order|free|shipping|side\ effects|overnight|shipped|the\ risks|pharmacy|pharmaceutical|adhd|magic\ mushrooms?|treating|paypal|credit\ card|shipment|shroom|polka\-dot|pros|cons|anxiety|prescription|bit\.ly\/|wickr|covid)/i
+score   DRUG_COWORDS_SUBJECT   0.5
+
+body DRUG_WORDS   /(\ dmt\ |ozempic|mushrooms|telegram|adderall|xanax|ketamine|cocaine|psilocybin|diazepam|mdma|tramadol|cannabis|valium|oxycodone|shrooms|marijuana|ecstasy|hydrocodone|fentanyl|percocet|heroin|alprazolam|ayahuasca|kush|methamphetamine|ritalin|codeine|morphine|psilocybe|dilaudid|oxycontin|amphetamine|suboxone|viagra|misoprostol|sativa|oxydrhere|cialis|purecybin|promethazine|oxycotin|clonazepam|pentobarbital|lorazepam|mescaline|etizolam|dimethyltryptamine|roxycodone|vicodin|ephedrine|ecstacy|klonopin|ambien|soma|ativan|cytotec|fioricet|indica|\ lsd\ |kush|phentermine|pentobarbital|misoprostol|cytotec|pentobarbital\ thc\ |abortion\ pills|pentobarbital|Methamphetamine|Tapentadol|Rivotril|Stilnox|zolpidem)/i
+score   DRUG_WORDS   1.0
+
+# Combine (META) words with Google Groups user
+
+body    URL_SHORTENERS /\/wa\.me\/|bit\.ly\/|rebrand\.ly\/|tinyurl\.com\/|he1\.me\/|short\.gy\|\.ly\/|\.gy\/|t\.me\/\.link|\.xyz\//
+score   URL_SHORTENERS  0.5
+
+body    DRUG_COWORDS /(pills|discreet|delivery|vape|shipping|banknotes|guaranteed|currency|passport|prescription|cartridge|prices|gummies|pharmacy|psychedelic|purchase|erectile|medication|medical|dose|edibles|meds|microdose|medications|passports|dosage|grams|trippy|acid|guarantee|currencies|microdosing|tablets|strains|potent|satisfaction|delivered|infused|mcg|discrete|gram|whatsap|packaging|banknote|doses|hallucinogenic|discreetly|legit|tablet|prescribed|meanie|dosing|refund|ordering|therapeutic|potency|pharmaceutical|order|\/product\-category\/|wickr|prescription|customer|(purity.*\%|\%.*purity)|Pharmac|barbitu)/i
+score   DRUG_COWORDS   0.5
+
+header  GAMBLE_PSYCHIC_WORDS_SUBJECT    Subject =~ /(casino|\ slot|slot\ |bet\ |alternatif|gacor|maxbet|maxwin|psychic|\ spells\ |astrology|jackpot|voodoo|daftar|mahjong|gampang|(love.*spell|spell.*love)|(spell.*caster|caster.*spell)|(magic.*spell|spell.*magic)|for\ hire|(buy.*cloned|cloned.*buy)|money|counterfeit|bills|currency|hitman)/i
+score   GAMBLE_PSYCHIC_WORDS_SUBJECT    1.0
+
+body    GAMBLE_PSYCHIC_WORDS    /(casino|\ slot|slot\ |bet\ |alternatif|gacor|maxbet|maxwin|psychic|\ spells\ |astrology|jackpot|voodoo|daftar|mahjong|gampang|(love.*spell|spell.*love)|(spell.*caster|caster.*spell)|(magic.*spell|spell.*magic)|for\ hire|parlay|kasino|tiket|hanoman|dalam|kemenangan|(buy.*cloned|cloned.*buy)|(slot.*jackpot|jackpot.*slot)|(slot.*joker|joker.*slot))/i
+score   GAMBLE_PSYCHIC_WORDS    1.0
+
+body    SCAM_PATTERNS   /((bitcoin.*recover|recover.*bitcoin)|(bitcoin.*invest|invest.*bitcoin)|(professional.*hacker|hacker.*professional)|for\ sale\ in|(my\ name.*contact|contact.*my\ name)|(movie.*bit\.ly\/|bit\.ly\/.*movie)|(cyber.*hacker|hacker.*cyber)|(online.*casino|casino.*online)|(recover.*stolen|stolen.*recover)(hack.*service|service.*hack)(crypto.*hack|hack.*crypto)|(contact.*recover|recover.*contact)|\:\ http|(hacking.*cyber|cyber.*hacking)|(bitcoin.*recover|recover.*bitcoin)|http.*\/products?\/|(online.*slot|slot.*online)|passport|currency|we\ offer|we\ sell|we\ are|we\ provide|contact\ us|contact\ info|in\ stock|\%\ discount|high\ quality|tracking\ number|discreet|free\ shipping|24\/7|we\ accept|shipping|no\ prescription|(crypto.*scam|scam.*crypto)|(crypto.*broker|broker.*crypto)|(client.*recover|recover.*client)(lost.*funds|funds.*lost)|(recover.*funds|funds.*recover)|(crypto.*recover|recover.*crypto)|(lost.*crypto|crypto.*lost)|(hacker.*contact|contact.*hacker)|(lottery.*jackpot|jackpot.*lottery)|(hacker.*quality|quality.*hacker)|(hack.*recover|recover.*hack)|quality.*service(contact.*assure|assure.*contact)|contact.*http|100\%|(pay|buy).*(bitcoin|crypto)|((pay|buy).*online)|clone?.*card|(card.*credit|credit.*card)(watch|stream) here)/i 
+score   SCAM_PATTERNS   1.0
+
+# patterns from sa seek-phrases-in-corpus
+body    CORPUS_PATTERNS / Yuan Renminbi |where to buy | Where can I buy | to purchase |Buy 100\% | UNDETECTED COUNTERFEIT ..N|r banknotes are |. We also pr| Online Buy | the quality | best place to buy /
+score   CORPUS_PATTERNS 1.0
+
+# Repeated data in body
+body    __HAS_DOTCOM_LINK  /\.com\//i
+tflags  __HAS_DOTCOM_LINK  multiple maxhits=31
+meta    THIRTY_DOTCOM_LINK __HAS_DOTCOM_LINK > 30
+score   THIRTY_DOTCOM_LINK    2.0
+
+body    __HAS_ORG_LINK  /\.org\//i
+tflags  __HAS_ORG_LINK  multiple maxhits=11
+meta    TEN_ORG_LINK __HAS_ORG_LINK > 10
+score   TEN_ORG_LINK    2.0
+
+body    __HAS_COMMON_SPAM_LINK  /\/(product|buy)/i
+tflags  __HAS_COMMON_SPAM_LINK  multiple maxhits=11
+meta    TEN_COMMON_SPAM_LINK __HAS_COMMON_SPAM_LINK > 10
+score   TEN_COMMON_SPAM_LINK    2.0
+
+body    __HAS_REPEAT_DOMAIN_LINK  /\.(site|website|network|shop|bit\.ly)\//i
+tflags  __HAS_REPEAT_DOMAIN_LINK  multiple maxhits=11
+meta    TEN_REPEAT_DOMAIN_LINK __HAS_REPEAT_DOMAIN_LINK > 10
+score   TEN_REPEAT_DOMAIN_LINK    2.0
+
+body    __HAS_REPEAT_DRUG_HITS  /(DMT|VAPE|THC|BEST)/i
+tflags  __HAS_REPEAT_DRUG_HITS  multiple maxhits=11
+meta    TEN_REPEAT_DRUG_HITS __HAS_REPEAT_DRUG_HITS > 10
+score   TEN_REPEAT_DRUG_HITS    2.0
+
+body    __HAS_REPEAT_PDF_HITS  /(\.pdf)/i
+tflags  __HAS_REPEAT_PDF_HITS  multiple maxhits=11
+meta    TEN_REPEAT_PDF_HITS __HAS_REPEAT_PDF_HITS > 10
+score   TEN_REPEAT_PDF_HITS    2.0
+
+header  BASE64_BODY     Content-Transfer-Encoding =~ /base64/
+score   BASE64_BODY     1.0
+
+meta    DRUG_GGROUPS_AND_WORDS  SERVER_GGROUPS && DRUG_WORDS
+score   DRUG_GGROUPS_AND_WORDS  1.5
+meta    DRUG_GGROUPS_AND_URL_SHORTENERS SERVER_GGROUPS && URL_SHORTENERS
+score   DRUG_GGROUPS_AND_URL_SHORTENERS 1.0
+meta    DRUG_GGROUPS_AND_COWORDS  SERVER_GGROUPS && DRUG_COWORDS
+score   DRUG_GGROUPS_AND_COWORDS  1.0
+meta    DRUG_GGROUPS_AND_COWORDS_SUBJECT    SERVER_GGROUPS && DRUG_COWORDS_SUBJECT
+score   DRUG_GGROUPS_AND_COWORDS_SUBJECT    1.0
+
+meta    GGROUPS_AND_GAMBLE_PSYCHIC_WORDS_SUBJECT    SERVER_GGROUPS && GAMBLE_PSYCHIC_WORDS_SUBJECT
+score   GGROUPS_AND_GAMBLE_PSYCHIC_WORDS_SUBJECT    2.5
+meta    GGROUPS_AND_GAMBLE_PSYCHIC_WORDS    SERVER_GGROUPS && GAMBLE_PSYCHIC_WORDS
+score   GGROUPS_AND_GAMBLE_PSYCHIC_WORDS    2.0
+
+meta    GGROUPS_AND_BASE64_BODY SERVER_GGROUPS && BASE64_BODY
+score   GGROUPS_AND_BASE64_BODY 3.0
+
+meta    GGROUPS_AND_SCAM_PATTERNS   SERVER_GGROUPS && SCAM_PATTERNS
+score   GGROUPS_AND_SCAM_PATTERNS   1.0
+
+meta    GGROUPS_AND_CORPUS_PATTERNS   SERVER_GGROUPS && CORPUS_PATTERNS
+score   GGROUPS_AND_CORPUS_PATTERNS   1.0
+
+meta    GGROUPS_AND_THIRTY_DOTCOM_LINK    SERVER_GGROUPS && THIRTY_DOTCOM_LINK
+score   GGROUPS_AND_THIRTY_DOTCOM_LINK    2.0
+
+meta    GGROUPS_AND_TEN_COMMON_SPAM_LINK    SERVER_GGROUPS && TEN_COMMON_SPAM_LINK
+score   GGROUPS_AND_TEN_COMMON_SPAM_LINK    2.0
+
+meta    GGROUPS_AND_TEN_REPEAT_DOMAIN_LINK    SERVER_GGROUPS && TEN_REPEAT_DOMAIN_LINK
+score   GGROUPS_AND_TEN_REPEAT_DOMAIN_LINK    2.0
+
+meta    GGROUPS_AND_TEN_REPEAT_DRUG_HITS    SERVER_GGROUPS && TEN_REPEAT_DRUG_HITS
+score   GGROUPS_AND_TEN_REPEAT_DRUG_HITS    2.0
+
+meta    GGROUPS_AND_PDF_HITS    SERVER_GGROUPS && TEN_REPEAT_PDF_HITS
+score   GGROUPS_AND_PDF_HITS    2.0
+
+header  SOLUTIONS_MANUAL   Subject =~ /solutions?\ manual|case\ solution/i
+score   SOLUTIONS_MANUAL    2.5
+
+# Italian spam
+header	ITALIAN_SPAM_SUBJECT	Subject =~ /PEDOFIL|BERLUSCON|MATTEO\ SALVINI|PEDERASTA|CRIMINALE|ARRESTATO/
+score   ITALIAN_SPAM_SUBJECT    2.0
+body    ITALIAN_SPAM_BODY   /PEDOFIL|BAMBINI|AVVOCATO|GIUSEPPE|LAZZARI|DANIELLE\ MINOTTI/
+SCORE   ITALIAN_SPAM_BODY   2.0
+
+# Body URI rules
+uri     URI_RULES_ONION /(vs3vh5y2aw6kqr4wvuvabka2qm6rcqoijslgnxb4mbj6xudpdffl4hyd|mq6imil4l6r7lho3ynqzxdcq2afonbyatosauxntnkm2qkjnvhurhlid\.onion|lhoktmc7tzo5khl65uj5nnr3qauxozngktt2spa6ovq5dceheludyhyd|2nhoc5qjbp5jpxdbor2rt6ue7lpyuzopm3yathjoee4ys2bgvttbwrad|docsdrcwsi3y4gv4\.onion|weedshop\.torpress2sarn7xw\.onion|gukm6235mhmwbauv3xtfz3llqm22uaaac57pmqnauxtqr67otxymx7yd\.onion|u2v7szaqxilvbqi7dq65d35w3xjx5hhszlnrk53knhwhw6d3f4rf5zad\.onion|17zGUpoX1YpYdu5a8L2evGEWE6XZcArY9B|epkutwfb6bwkvrd275utjpuzavnsrdwjdn6uzw33djlngq4vmyg7wgad|dhfk22hkwwn27obpsz22uhdyeu42b5wlkn4jlrelh75a2cgfoshkj6id\.onion|jx4lzyctp4h6yyj4bc2qemm3ce4ssxo3ftsu3ajhzdc2tipzz4gpe5id\.onion|oe2gfib2lea5lengv7pvnsdxvf4gvz3bfiglpvkhbs2i7o3a52jodwid\.onion|hztsln4fi3udznlinmxnbwdey6lbehn4sinqa6ltbu4crxgqnlzdqoid|2nhoc5qjbp5jpxdbor2rt6ue7lpyuzopm3yathjoee4ys2bgvttbwrad|lhoktmc7tzo5khl65uj5nnr3qauxozngktt2spa6ovq5dceheludyhyd)/i
+score   URI_RULES_ONION 5.0
+
+uri     URI_RULES_01    /(cristinarossello\.it\/EN\/rfo\.html|l450v\.alamy\.com\/|lemybeauty\@dnmx\.org|www\.businesssitepage\.com|imrdsoacha\.gov\.co\/silvitra|www.ldc.upenn.edu\/staff\/denise-dipersio|www.fastpeoplesearch.com\/address\/)/i
+score   URI_RULES_01    5.0
+
+uri     URI_RULES_02    /(ketkets\.com|slainstitute\com|marijuanaonlineshopsupply\.com|bank-notes-for-sale\.over-blog\.com|radiologex\.com|www\.railgun\.ch|t\.me\/railgun|twitter\.com\/railgun_project|medium\.com\/\@Railgun_Project|dotmoovs\.com|twitter\.com\/dotmoovs|noidaescortncr\.in\/|t\.me\/larrykarius|www\.edbmails\.com\/pages\/|www\.ictsystemsllc\.com|primepowders\.net\/product|bodyroids\.store\/product|bestolie\.net\/|onlinemediaclapharma\.com\/product|trufflemushroomshop\.com\/product|www.delhihotservices.com|interphamachem.com|pyramidpens\.shop\/product\/|psychedelicshome\.live\/product)/i
+score   URI_RULES_02    5.0
+
+uri     URI_RULES_03    /(noveltydmvexperts.com\/|mushroomhousefordepression\.com\/product\/|passportidcards\.com\/|kvarmags\.com\/product|darknetmarketbuyers\.com\/product|rb\.gy\/|nextdaydeliverypharmacy\.com\/|w\.hnfosensor\.com\/|Recoverymasters\@email\.cz|qualitybills\-documents\@hotmail\.com|drpeterspellcaster22\.blogspot\.com|drpeterspellcaster\.wixsite\.com\/|www\.swiftfoxcoder\.tech|europa\-goede\-vervoerder\.com|credibledocumentsonline\.com\/|lostrecoverymaster\.com|snowden\-leaks\@tutanota\.com|imrdsoacha\.gov\.co\/silvitra|www.ldc.upenn.edu\/staff\/denise-dipersio|www.fastpeoplesearch.com\/address\/)/i
+score   URI_RULES_03    5.0
+
+uri     URI_RULES_04    /(pinkzilla\.in|callgirls.*\.com|taniasharma\.in|escortsbulletin\.com|lailaescorts\.com|www\.escortsaffair\.com|friendfinder-x\.com\/go\/|mennation\.com\/go\/|dubaiescortsservice\.net|sexydatingwomen\.com|adultfriendfinder\.com\/go\/|hornywife\.com|sexfinder\.com|stevemedsstore\.com\/|WWW\.KINGTRUST\.TO|buythcvapejuicecartsonline\.com\/|exoticcartsonline\.com\/|buypsilocypsychedeliconline\.com\/|anglezzzzzzz\.likesyou\.org\/|christyansworld\.atwebpages\.com\/|youthmeetupplace\.talk4fun\.net\/|kohtumispaik3\.66ghz\.com\/|buypsychedelicsonline\.net\/)/i
+score   URI_RULES_04    5.0
+
+uri     URI_RULES_05    /(browsegrades\.net\/|www\.stuvia\.com\/|confirmedchemicals\.com\/)/i
+score   URI_RULES_05    5.0
+
+# Drug or hacking related (body)
+body    DRUG_HACK_01     /(xf5fjyhvq6wyjf3i|darknetbusinessdeals|hackservice@|\@colaexchange|actavisplug4sale|drugmedsforsale|miles\ market|realdocuments\@|\@realdocsonline|realandfakedocs|darknetdocsforsale|wainpharmacy|covid19pharmacy|\@deepweb45|Apollo0607\@|buds_bran2011|x14PdY55sK|v9MShl2i2s|\@ghostplug03|globalcertification1\@|globaljack1|RadiologexOfficialGroup|cybilltritech\ AT\ protonmail\ DOT\ com|legitplug25|fanaticahack|jinxproof2\@gmail\.com|strongestman222|hackersforce\@protonmail\.com|majidbuda1\@|Ranko322|recoveryexpert\ \@|support\@lostrecoverymaster|applemerch|darkgunweeep2epr|topnotchdrugz|\@valiumket\.com|heizenkemz|4everheizen\@gmail\.com|craigslistfortrust1|caregivers420|33ndja7v5retuxca|mlbfacecoverings\.com|Mlb Logo Face Masks|\@willyjones01|generalcertification123\@protonmail.com|g1431112-pmoc|\@Konami4|buycounterfeitmoneindia|sbwatkins1214\@yahoo\.com|dipersio\@ldc.upenn.edu|castrodavivienda|Luiscastrovzla7|drugporn0|quarantineplug1\@|webaqp4igb7miec7|royaltymarket1|Tweakersunited|Contractorx\@|zshepherd\@|@medicalweedhome|cvvhacker450\@gmail\.com|\@bestseller505|cid\.38726875f620f89e|237692308844|albertgonzalez0001\@gmail\.com|dc7d7F3qyRAxZmUx|buyclonedcardsatm|Sellingcvvdumppaypalbanklogin|SellingDumpsandcvv|683485306|84932475671|\@bigshop79|authenticdocs50\@yandex\.com|\@biggertrader50|237692308844|wandb\.ai\/|techwebservices\@|remotespywise)/i
+score   DRUG_HACK_01     4.0
+
+body    DRUG_HACK_02     /(\/legicalempiremarket|\@fasthookup102|13238348961|84774511893|\/jackhieu|678924920|m\.avive\.world\/|dmtcartsofficial\.com\/|psychedelicminds\.shop|trippinbros\.com\/|\/cricket247\.net|\/cricketfastline\.net|browsegrades\.net\/\/polkadot\-magic|mushroomsshopflorida\.com|dmtcartsofficial\.com|\/Distrola25|dmtcartridges\.com|buydriedmagicmushroom\.com|psychedelicdominion\.com|delta8vapesshop\.com|12134540947|\#buy.....|delta8vapesshop\.com\/|topshelfweedshop\.com\/|methamphetaminebox\.com\/|passionweed\.site|methamphetaminebox\.com|27733399345|cheapdarknetmarket\.com|trippyfantasy\.com|13039002495|au\-psychedelics\.com\/|lerrymushrooms\.shop\/|cheapdarknetmarket\.com\/|\/gamesensicaIs|\/officialsense|\/buypsychedelicdrugs|goldenretrieverwelpen\.com\/|psychedelicgalaxy\.com\/|psychedelicmushroomtrippy|officialpolkadots\.com\/|247shopmart\.org\/|www\.cureus\.com\/|genious\-shop\.com\/|pills2days\.com\/|gopainpill\.com\/|sway\.office\.com\/|53E3tOeeuayBq6EG|rehabkit\.org\/|180tabs\.com\/|72hrspills\.net\/|vunca8pp|K98JC7U8|societylink\.org\/|www\.alpharcforsale\.com\/|eagleviewfirearms\.com\/|12624215766|originalmotorparts\.com\/|fe7dqqbj|vivaslotgegergeden|2348130725051|drsikama|edusight\.ae\/|provenexpert\.com\/|12624215766|originalmotorparts\.com|teckwebservices|7475.?936068|27717507286|drmark396|www\.pressregister\.com\/|Cybernetsurveillance|cybertraceservice|leeultimatehacker|Adrianlamo|prowizardgilbertrecovery|wizardjamesrecovery|ateliersansfrontieres\.org|REMOTESPYWISE|mightyyuri|spyhackelite|ALPHAHACK727|HARVEYDONALD192|dinar.?sarker|8801685343130|HARVEYDONALD192|nairaland\.com\/|TECHSPYHACKERPRO|Hackingprofessional3|27655767261|MONEYRECOVERY001|Recoverywizardmayemusk|hackerone975|bualw\.com\/(http.*\/watch)|pede\.4tv\.live\/|(http.*\/movie)|Wongbestwizard|(hacker.*professional|professional.*|hacker)|codercyberservices|(bitcoin.*stolen|stolen.*bitcoin)|(bitcoin.*retrieve|retrieve.*bitcoin)|O8O3664O134|slothacker62|62hackerslot|valori\.it|coinidol\.com|lemybeauty|t\-links\.org\/EZjAi12N|cinerpharma\.com\/product|\.onlinexdate\.com|applemerch|hackerrank\.com\/|12014305865|17736092741|danielmeuliweberecovery|seychellesrecoveryexpert|MARKWIZARD\@|\@SOLUTION4U.COM|spyhackden|drlucasspelltemple|hackerone975|requitalfinance\.com\/|jethacks.*recovery|J\ e\ t\ h\ a\ c\ k\ s|TECHSPYHACKERPRO|MATTDUNHAM928|marianspells|2349160402535|27795312433|hipsandbumsenlgement|maya\-?aprianaya|100092647912835|EDETANLEN|carepremiere\.com\/|trusthealthshop\.com\/|Validclonedcardsforsale|counterfeitmoneyonline26|Kelvinloidon|tipstrikmudah\.theblog\.me\/|ivqtab9v|122140462574002683)/i
+score   DRUG_HACK_02    4.0
+
+# IT spam
+body    ITSPAM2		/\[\/url\]|\[url\=|\]http/i
+score   ITSPAM2		0.5
+
+# doxing
+body D_DOX1		/lea_walid_777/i
+score	D_DOX1		4.0
+body	D_DOX2		/358\ 465268803/
+score	D_DOX2		5.0
+
+# negative for drugs
+body    DRUGS_NEGATIVE		/pharmaceutical|doctor/i
+score	DRUGS_NEGATIVE		-0.2
+
+# contact links and domains etc.
+body    CONTACT_LINK    /whatsapp|whats\ app|\@protonmail|wickr\ id|telegram|jabber|ic2|\.onion/
+score   CONTACT_LINK    1.0
+
+# Random shit
+body RS_SHIT1	/^[a-zA-Z0-9_]{6}\ \ <a href="http:\/\/[a-z]{12}\.com\/">.*\[url=http:\/\/[a-z]{12}\.com\/.*\[link=http:\/\/[a-z]{12}\.com\//
+score	RS_SHIT1	5.0
+
+score ALL_TRUSTED 0
+
+#   Add *****SPAM***** to the Subject header of spam e-mails
+#
+# rewrite_header Subject *****SPAM*****
+
+
+#   Save spam messages as a message/rfc822 MIME attachment instead of
+#   modifying the original message (0: off, 2: use text/plain instead)
+#
+report_safe 0
+
+#remove_header all Status
+#remove_header all Report
+
+#   Set which networks or hosts are considered 'trusted' by your mail
+#   server (i.e. not spammers)
+#
+# trusted_networks 212.17.35.
+
+
+#   Set file-locking method (flock is not safe over NFS, but is faster)
+#
+# lock_method flock
+
+
+#   Set the threshold at which a message is considered spam (default: 5.0)
+#
+required_score 5.0
+
+
+#   Use Bayesian classifier (default: 1)
+#
+# use_bayes 1
+
+
+#   Bayesian classifier auto-learning (default: 1)
+#
+# bayes_auto_learn 1
+
+
+#   Set headers which may provide inappropriate cues to the Bayesian
+#   classifier
+#
+# bayes_ignore_header X-Bogosity
+# bayes_ignore_header X-Spam-Flag
+# bayes_ignore_header X-Spam-Status
+
+
+#   Whether to decode non- UTF-8 and non-ASCII textual parts and recode
+#   them to UTF-8 before the text is given over to rules processing.
+#
+# normalize_charset 1
+
+#   Some shortcircuiting, if the plugin is enabled
+# 
+ifplugin Mail::SpamAssassin::Plugin::Shortcircuit
+#
+#   default: strongly-whitelisted mails are *really* whitelisted now, if the
+#   shortcircuiting plugin is active, causing early exit to save CPU load.
+#   Uncomment to turn this on
+#
+# shortcircuit USER_IN_WHITELIST       on
+# shortcircuit USER_IN_DEF_WHITELIST   on
+# shortcircuit USER_IN_ALL_SPAM_TO     on
+# shortcircuit SUBJECT_IN_WHITELIST    on
+
+#   the opposite; blacklisted mails can also save CPU
+#
+# shortcircuit USER_IN_BLACKLIST       on
+# shortcircuit USER_IN_BLACKLIST_TO    on
+# shortcircuit SUBJECT_IN_BLACKLIST    on
+
+#   if you have taken the time to correctly specify your "trusted_networks",
+#   this is another good way to save CPU
+#
+# shortcircuit ALL_TRUSTED             on
+
+#   and a well-trained bayes DB can save running rules, too
+#
+# shortcircuit BAYES_99                spam
+# shortcircuit BAYES_00                ham
+
+endif # Mail::SpamAssassin::Plugin::Shortcircuit

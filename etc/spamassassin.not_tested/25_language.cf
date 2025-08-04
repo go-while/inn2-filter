@@ -1,0 +1,23 @@
+#   Testing Language Module
+ifplugin Mail::SpamAssassin::Plugin::TextCat
+ok_languages en
+endif # Mail::SpamAssassin::Plugin::TextCat
+
+# language
+score UNWANTED_LANGUAGE_BODY 0.01
+header  LANG_ENGLISH_HIER   Newsgroups =~ /(^(aioe|alt|aus|bionet|comp|demon|eternal\-september|gnu|houston|humanities|linux|microsoft|milw|misc|mozilla|netscape|news|nntpworld|nz|opennews|openwatcom|perl|pgh|pgsql|rec|rocksolid|sat|sci|staroffice|talk|ucb|uk|us)\.)|(soc\.genealogy\.medieval|mailing\.postfix\.users)/
+score   LANG_ENGLISH_HIER   0.01
+
+header  LANG_NOT_ENGLISH_NG Newsgroups =~ /(\.(ites|fan\.countries|fr|it|de|language?s|nl|pl)\.)|\.(aeffle|culture\.|chinese|japan|russia|spanish|ukraine|iraq|genova|test)|(sfnet\.)/
+score   LANG_NOT_ENGLISH_NG 0.01
+
+meta    LANG_ENGLISH_NEWSGROUP  LANG_ENGLISH_HIER && !LANG_NOT_ENGLISH_NG
+score   LANG_ENGLISH_NEWSGROUP  0.01
+
+meta    LANG_UNWANTED   UNWANTED_LANGUAGE_BODY && LANG_ENGLISH_NEWSGROUP
+score   LANG_UNWANTED   2.0
+
+####ifplugin Mail::SpamAssassin::Plugin::Shortcircuit
+
+
+####endif #Mail::SpamAssassin::Plugin::Shortcircuit

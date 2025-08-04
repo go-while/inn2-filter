@@ -1,0 +1,13 @@
+# Repeated data in body
+
+body    __HAS_REPEAT_HTTP_LINK  /https?:\/\//
+tflags  __HAS_REPEAT_HTTP_LINK  multiple maxhits=41
+meta    TEN_REPEAT_HTTP_LINK __HAS_REPEAT_HTTP_LINK > 10
+score   TEN_REPEAT_HTTP_LINK    0.8
+meta    FORTY_REPEAT_HTTP_LINK __HAS_REPEAT_HTTP_LINK > 40
+score   FORTY_REPEAT_HTTP_LINK    2.0
+
+####ifplugin Mail::SpamAssassin::Plugin::Shortcircuit
+
+
+####endif #Mail::SpamAssassin::Plugin::Shortcircuit

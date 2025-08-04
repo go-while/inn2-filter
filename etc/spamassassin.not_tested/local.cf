@@ -1,0 +1,75 @@
+# This is the right place to customize your installation of SpamAssassin.
+#
+# See 'perldoc Mail::SpamAssassin::Conf' for details of what can be
+# tweaked.
+#
+# Only a small subset of options are listed below
+#
+###########################################################################
+
+header  ABAVIA_BAD_MSGID   Message-ID =~ /^.*@[a-zA-Z0-9\-]{22,26}>$/
+score   ABAVIA_BAD_MSGID   0.001
+header  ABAVIA_CHAR_32_DOMAIN   From =~ /.*@[a-zA-Z0-9]{32}\./
+score   ABAVIA_CHAR_32_DOMAIN   0.001
+meta    ABAVIA_BOT  SERVER_ABAVIA && ABAVIA_BAD_MSGID && ABAVIA_CHAR_32_DOMAIN
+score   ABAVIA_BOT  8.0
+
+# Does References header exist?
+header  HAS_REFERENCES   exists:References
+score   HAS_REFERENCES   0.01
+
+header  BASE64_BODY     Content-Transfer-Encoding =~ /base64/
+score   BASE64_BODY     1.0
+
+header  QUOTED_PRINTABLE_BODY     Content-Transfer-Encoding =~ /quoted\-printable/
+score   QUOTED_PRINTABLE_BODY     0.001
+
+header  SOLUTIONS_MANUAL_SUBJECT   Subject =~ /solutions?\ manual|case\ solution/i
+score   SOLUTIONS_MANUAL_SUBJECT    2.5
+body    SOLUTIONS_MANUAL_BODY   /solutions?\ manual/i
+score   SOLUTIONS_MANUAL_BODY   2.5
+
+# contact links and domains etc.
+body    CONTACT_LINK    /whatsapp|whats\ app|\@protonmail|wickr\ id|telegram|jabber|ic2|\.onion|\.shop\//
+score   CONTACT_LINK    0.2
+
+# Random shit
+body RS_SHIT1	/^[a-zA-Z0-9_]{6}\ \ <a href="http:\/\/[a-z]{12}\.com\/">.*\[url=http:\/\/[a-z]{12}\.com\/.*\[link=http:\/\/[a-z]{12}\.com\//
+score	RS_SHIT1	5.0
+
+score ALL_TRUSTED 0
+
+#   Add *****SPAM***** to the Subject header of spam e-mails
+#
+# rewrite_header Subject *****SPAM*****
+
+
+#   Save spam messages as a message/rfc822 MIME attachment instead of
+#   modifying the original message (0: off, 2: use text/plain instead)
+#
+report_safe 0
+
+remove_header all Status
+#remove_header all Report
+
+#   Set which networks or hosts are considered 'trusted' by your mail
+#   server (i.e. not spammers)
+#
+# trusted_networks 212.17.35.
+
+
+#   Set file-locking method (flock is not safe over NFS, but is faster)
+#
+# lock_method flock
+
+
+#   Set the threshold at which a message is considered spam (default: 5.0)
+#
+required_score 6.0
+
+ifplugin Mail::SpamAssassin::Plugin::Shortcircuit
+
+shortcircuit    ABAVIA_BOT on
+tflags ABAVIA_BOT noautolearn
+
+endif # Mail::SpamAssassin::Plugin::Shortcircuit

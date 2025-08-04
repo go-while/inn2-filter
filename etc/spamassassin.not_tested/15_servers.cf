@@ -1,0 +1,44 @@
+# servers
+
+header  SERVER_RSLIGHT  Message-ID =~ /(rocksolidbbs\.com|novabbs\.(com|org))/
+score   SERVER_RSLIGHT  0.001
+
+header  SERVER_UZORETO  Path =~ /\!posting\.uzoreto\.com\!not\-for\-mail/
+score   SERVER_UZORETO  0.5
+
+header  SERVER_NEWSDEMON    Path =~/\!news\.newsdemon\.com\!not\-for\-mail/
+score   SERVER_NEWSDEMON    0.001
+
+header  SERVER_ABAVIA   Path =~ /\.abavia\.com\!reseller\!not\-for\-mail/
+score   SERVER_ABAVIA   0.001
+
+header  SERVER_USENET_SERVER_COM    Path =~ /fx[0-9]{1,2}\.ams[0-9]{1}\.POSTED\!not\-for\-mail/
+score   SERVER_USENET_SERVER_COM    0.001
+
+header  SERVER_EDIACARA Path =~ /\!\.POSTED\.beagle\.ediacara\.org\!not\-for\-mail/
+score   SERVER_EDIACARA 0.001
+
+header  SERVER_GIGANEWS Path =~ /\!news\.giganews\.com\.POSTED\!not\-for\-mail/
+score   SERVER_GIGANEWS 0.001
+
+header  SERVER_OPEN_N_N Path =~ /\!open\-news\-network\.org\!\.POSTED\!not\-for\-mail/
+score   SERVER_OPEN_N_N 0.001
+
+header  SERVER_PAGANINI Path =~ /paganini\.bofh\.team\!not\-for\-mail/
+score   SERVER_PAGANINI 0.001
+
+header  HAS_INJECTION_INFO   exists:Injection-Info
+score   HAS_INJECTION_INFO  0.001
+
+meta    GIGANEWS_WITH_INJECTION_INFO    SERVER_GIGANEWS && HAS_INJECTION_INFO
+score   GIGANEWS_WITH_INJECTION_INFO    25.0
+
+meta    AMS_WITH_INJECTION_INFO    SERVER_USENET_SERVER_COM && HAS_INJECTION_INFO
+score   AMS_WITH_INJECTION_INFO    25.0
+
+ifplugin Mail::SpamAssassin::Plugin::Shortcircuit
+
+shortcircuit    GIGANEWS_WITH_INJECTION_INFO    on
+tflags  GIGANEWS_WITH_INJECTION_INFO    noautolearn
+
+endif #Mail::SpamAssassin::Plugin::Shortcircuit
