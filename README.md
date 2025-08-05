@@ -1,10 +1,12 @@
-# INN2 PERL Filter - Security Hardened Version
+# INN2 PERL Filter - Security Hardened Version <<-- AI invented that -->>
 
-A recovered and security-hardened NNRPD spam filter for INN (InterNetNews) originally from novabbs.org / i2pn2.org.
+A recovered and security-hardened NNRPD spam filter
+for INN (InterNetNews) originally from novabbs.org / i2pn2.org.
 
 ## 🛡️ Security Improvements
 
-This version has been completely security-hardened to eliminate critical vulnerabilities found in the original code:
+This version has been completely security-hardened to
+eliminate critical vulnerabilities found in the original code:
 
 ### ✅ Major Security Fixes Applied
 
@@ -197,7 +199,8 @@ $SPAM_THRESHOLD = 5.0;      # SpamAssassin score threshold
 
 ## 📚 Background
 
-This filter was originally deployed on novabbs.org/i2pn2.org news servers. The original code contained severe security vulnerabilities including:
+This filter was originally deployed on novabbs.org/i2pn2.org news servers.
+The original code contained severe security vulnerabilities including:
 
 - Path traversal attacks via user headers
 - Command injection through inadequate shell escaping
@@ -209,8 +212,11 @@ This hardened version maintains all original functionality while eliminating the
 
 ## 🤝 Contributing
 
-For security issues or improvements, please review the code carefully and test in a safe environment before deployment.
+For security issues or improvements, please review the code carefully!
+AND test in a safe environment before deployment!
 
 ---
 
-**⚠️ Important**: This code handles user input and executes system commands. Always review security implications before deployment in production environments.
+**⚠️ Important**:
+This code handles user input and executes system commands.
+Always review security implications before deployment in production environments.
