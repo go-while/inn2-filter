@@ -119,6 +119,7 @@ The following directories will be created automatically by the scripts:
 my %config = (
     hostpath          => "novabbs.org",     # Your hostname
     trusted_servers   => "mm2021|rocksolidbbs\\.com|novabbs\\.(com|org)", # Trusted relays
+    enable_spamassassin => 1,               # Enable/disable SpamAssassin checking (1=enabled, 0=disabled)
     checkincludedtext => 0,
     includedcutoff    => 40,
     includedratio     => 0.6,
@@ -157,24 +158,8 @@ $SPAM_THRESHOLD = 5.0;      # SpamAssassin score threshold
    ```
 
 3. **Configure INN to use the filter:**
-   Add to `/etc/news/readers.conf`:
-   ```
-   auth "*" {
-       hosts: "*"
-       default: "<NOPASS>"
-   }
-
-   access "*" {
-       users: "*"
-       newsgroups: "*"
-       perlfilter: true
-   }
-   ```
-
-   And ensure `/etc/news/inn.conf` has:
-   ```
-   perlfilter: true
-   ```
+   The filter will be automatically loaded from `/etc/news/filter/filter_nnrpd.pl`
+   when INN2 is compiled with Perl filtering support.
 
 4. **Install dependencies:**
    ```bash
