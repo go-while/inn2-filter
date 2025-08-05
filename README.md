@@ -157,9 +157,23 @@ $SPAM_THRESHOLD = 5.0;      # SpamAssassin score threshold
    ```
 
 3. **Configure INN to use the filter:**
-   Add to `/etc/news/filter.conf`:
+   Add to `/etc/news/readers.conf`:
    ```
-   *:*:filter_nnrpd.pl
+   auth "*" {
+       hosts: "*"
+       default: "<NOPASS>"
+   }
+
+   access "*" {
+       users: "*"
+       newsgroups: "*"
+       perlfilter: true
+   }
+   ```
+
+   And ensure `/etc/news/inn.conf` has:
+   ```
+   perlfilter: true
    ```
 
 4. **Install dependencies:**
