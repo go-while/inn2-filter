@@ -10,6 +10,7 @@
 # - Input sanitization for log files to prevent log injection
 # - All user-controlled data hashed before filesystem operations
 # - Control character filtering throughout
+# - SpamAssassin checking made optional via config flag
 #
 # MISSING FILES THAT NEED TO BE RESTORED:
 # =====================================
@@ -56,6 +57,7 @@ sub shell_escape {
 my %config = (
     hostpath          => "novabbs.org",        # Central hostname configuration
     trusted_servers   => "mm2021|rocksolidbbs\\.com|novabbs\\.(com|org)", # Trusted relay servers/users
+    enable_spamassassin => 1,                  # Enable/disable SpamAssassin checking (1=enabled, 0=disabled)
     checkincludedtext => 0,
     includedcutoff    => 40,
     includedratio     => 0.6,
@@ -154,18 +156,20 @@ sub filter_post {
 
     copy($tempfile_path, $postedfile);
 
-    $sa_arguments = '"' . $tempfile_base . '" "' . $mid_safe . '" "' . $from_safe . '" "' . $subject_safe . '" "' . $newsgroups_safe . '"';
-    # SpamAssassin integration - RESTORED ✅
-    $spamvalue = `/usr/bin/php /news/spam/bin/i2pn2-spamassassin.php $sa_arguments`;
-    $isspam = "/news/spam/nnrpd/found/".$tempfile_base;
-
     $note = '';
 
-    if (-e $isspam) {
-        $rval = "Blocked by Filter";
-        $note = "*SPAM* ";
-        unlink($isspam);
-        unlink($postedfile);
+    # SpamAssassin integration - OPTIONAL (controlled by config flag)
+    if ($config{enable_spamassassin}) {
+        $sa_arguments = '"' . $tempfile_base . '" "' . $mid_safe . '" "' . $from_safe . '" "' . $subject_safe . '" "' . $newsgroups_safe . '"';
+        $spamvalue = `/usr/bin/php /news/spam/bin/i2pn2-spamassassin.php $sa_arguments`;
+        $isspam = "/news/spam/nnrpd/found/".$tempfile_base;
+
+        if (-e $isspam) {
+            $rval = "Blocked by Filter";
+            $note = "*SPAM* ";
+            unlink($isspam);
+            unlink($postedfile);
+        }
     }
 
 # SECURITY FIX: Use hashed filenames for signal files to prevent path traversal
