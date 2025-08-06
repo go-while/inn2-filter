@@ -222,6 +222,14 @@ sub filter_post {
     print $debug_fh4 "\n" . gmtime() . " DEBUG: checkrate.php returned: '$rval'";
     close $debug_fh4;
 
+    # Check if checkrate.php rejected the post
+    chomp($rval);  # Remove trailing newline
+    if ($rval ne "") {
+        # checkrate.php returned an error message - reject the post
+        unlink($tempfile_path);  # Clean up temp file
+        return $rval;  # Return the error message from checkrate.php
+    }
+
     copy($tempfile_path, $postedfile);
 
     $note = '';
