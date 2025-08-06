@@ -19,7 +19,7 @@ if ($argc != 7) {
 }
 
 $user = $argv[1];
-$myhash = $argv[2];        // HMAC-SHA512 of user+body+subject
+$myhash = $argv[2];        // SHA256 hex of user+body+subject
 $mid = $argv[3];           // Message-ID
 $from = $argv[4];          // From header
 $subject = $argv[5];       // Subject header
@@ -53,14 +53,27 @@ function get_safe_username($user) {
     }
 }
 
-// Security: Hash the myhash to prevent path traversal
-// NOTE: Must match the safe_filename_hash() function in Perl filter
-// Perl does: sha256_hex($input) where $input has control chars removed
-$clean_myhash = preg_replace('/[\x00-\x1f\x7f-\x9f]/', '', $myhash);
-$content_hash = hash('sha256', $clean_myhash);
+// Security: Validate the myhash is a proper SHA256 hex (64 hex chars)
+// If Perl sends malformed hash, something is wrong - reject the post
+if (!preg_match('/^[a-fA-F0-9]{64}$/', $myhash)) {
+    error_log("checkrate.php: Invalid hash format from Perl filter: " . substr($myhash, 0, 20) . "...");
+    echo "Invalid hash format (bug in filter_nnrpd.pl sending malformed hash)";
+    exit(1);
+}
+$content_hash = $myhash;  // Use directly - already validated
 $user_safe = get_safe_username($user);
 
 // 1. CHECK CONTENT-BASED RATE LIMITING (prevent rapid reposting of same content)
+//
+// Content hash explanation:
+// - $myhash comes from Perl: SHA256(user+body+subject) in hex format
+// - We clean it to ensure only hex characters for filesystem safety
+// - Simple and direct - no complex HMAC or base64 encoding needed
+// - This prevents identical content from being reposted within 5 minutes
+// - Example: User "bob" posting "Hello world" creates the same hash every time
+// - Different users posting same content = different hashes (user is part of hash)
+// - Same user posting different content = different hashes (body/subject different)
+//
 $content_rate_file = $rate_base_dir . $content_hash;
 if (file_exists($content_rate_file)) {
     $last_post_time = (int)file_get_contents($content_rate_file);

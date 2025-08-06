@@ -207,7 +207,7 @@ sub filter_post {
     my $newsgroups_safe = shell_escape($newsgroups);
     my $user_safe = shell_escape($user);
 
-    $myhash = hmac_sha512_base64($user.$body.$subject);
+    $myhash = sha256_hex($user.$body.$subject);
     $arguments = '"' . $user_safe . '" "' . $myhash . '" "' . $mid_safe . '" "' . $from_safe . '" "' . $subject_safe . '" "' . $newsgroups_safe . '"';
 
     # DEBUG: Log before checkrate call
