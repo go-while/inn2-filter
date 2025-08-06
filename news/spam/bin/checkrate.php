@@ -43,12 +43,22 @@ if (!is_dir($user_rate_dir)) {
     mkdir($user_rate_dir, 0755, true);
 }
 
+// Security: Use real username if safe, otherwise hash it
+// Safe usernames: alphanumeric only, max 20 characters
+function get_safe_username($user) {
+    if (preg_match('/^[a-zA-Z0-9]{1,20}$/', $user)) {
+        return $user;  // Safe to use directly
+    } else {
+        return hash('sha256', $user);  // Hash unsafe usernames
+    }
+}
+
 // Security: Hash the myhash to prevent path traversal
 // NOTE: Must match the safe_filename_hash() function in Perl filter
 // Perl does: sha256_hex($input) where $input has control chars removed
 $clean_myhash = preg_replace('/[\x00-\x1f\x7f-\x9f]/', '', $myhash);
 $content_hash = hash('sha256', $clean_myhash);
-$user_hash = hash('sha256', $user);
+$user_safe = get_safe_username($user);
 
 // 1. CHECK CONTENT-BASED RATE LIMITING (prevent rapid reposting of same content)
 $content_rate_file = $rate_base_dir . $content_hash;
@@ -64,7 +74,7 @@ if (file_exists($content_rate_file)) {
 }
 
 // 2. CHECK USER-BASED RATE LIMITING (prevent rapid posting by same user)
-$user_rate_file = $user_rate_dir . $user_hash;
+$user_rate_file = $user_rate_dir . $user_safe;
 if (file_exists($user_rate_file)) {
     $last_user_post = (int)file_get_contents($user_rate_file);
     $user_time_diff = $current_time - $last_user_post;
@@ -77,7 +87,7 @@ if (file_exists($user_rate_file)) {
 }
 
 // 3. CHECK HOURLY POST LIMIT (prevent spam floods)
-$hourly_file = $user_rate_dir . $user_hash . "_hourly";
+$hourly_file = $user_rate_dir . $user_safe . "_hourly";
 $posts_this_hour = 0;
 if (file_exists($hourly_file)) {
     $hourly_data = file_get_contents($hourly_file);
