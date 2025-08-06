@@ -1,0 +1,201 @@
+####
+##
+## ORIGINAL VULNERABLE FILE RECOVERED FROM NOVABBS SERVERS
+##
+## ⚠️  SECURITY WARNING - DO NOT USE THIS FILE! ⚠️
+##
+## This file contains CRITICAL SECURITY VULNERABILITIES including:
+## - Path traversal attacks (../../../etc/passwd in filenames)
+## - Command injection via inadequate shell escaping  
+## - Predictable temporary files (rand(100) = security risk)
+## - Raw user data in filesystem paths
+## - Log injection vulnerabilities
+## - File handle bugs (wrong variable closed)
+##
+## This file is kept ONLY as a reference to show what NOT to do.
+## Use the security-hardened version: filter_nnrpd.pl
+##
+
+# filter_nnrpd.pl
+#
+# Do any initialization steps.
+#
+use Digest::SHA qw(hmac_sha256_base64 hmac_sha512_base64 sha256_hex sha512_hex sha1_hex);
+use File::Copy;
+
+my %config = (
+    checkincludedtext => 0,
+    includedcutoff    => 40,
+    includedratio     => 0.6,
+    quotere           => '^[>:]',
+    antiquotere       => '^[<]',    # so as not to reject dict(1) output
+);
+
+#
+# Sample filter
+#
+sub filter_post {
+    my $rval = "";    # assume we'll accept.
+    $logfile = "/news/spam/log/nnrpd.log";
+    $hashfile = "/news/spam/data/posting_users.hash";
+
+    $modify_headers = 1;
+    $ver = "SpamAssassin 4.0.0";
+
+    $postingaccount = $user;
+
+    my $hostpath = "novabbs.org";
+
+    if ( $user =~ /mm2021|rocksolidbbs\.com|novabbs\.(com|org)/ ) {
+        if ( $hdr{"X-Rslight-Posting-User"} ne '') {
+            add_header_item(\%hdr, 'Injection-Info', $hdr{"X-Rslight-Posting-User"} );
+            $postingaccount = $hdr{"X-Rslight-Posting-User"};
+        } else {
+            add_header_item(\%hdr, 'Injection-Info', $user );
+        }
+    } else {
+        add_header_item(\%hdr, 'Injection-Info', $user );
+    }
+    set_message_id(\%hdr, 'Message-ID', $body);
+    add_header(\%hdr, 'X-Spam-Checker-Version', $ver );
+
+    $postedfile = "/news/spam/posted/".$hdr{"From"}."-".$hdr{"Message-ID"};
+    $tempfile = rand(100);
+    if (not open(LOCAL, ">>/news/spam/nnrpd/check/$tempfile")) {
+        slog('E', "Cannot open $file: $!");
+        return $rval;
+    }
+
+    foreach (sort keys %hdr) {
+        next if $_ eq '__BODY__' or $_ eq '__LINES__';
+        print LOCAL "$_: $hdr{$_}\n";
+    };
+    print LOCAL "\n";
+    print LOCAL $body;
+    close LOCAL;
+
+    $mid = $hdr{'Message-ID'};
+    $from = $hdr{'From'};
+    $subject = $hdr{'Subject'};
+    $newsgroups = $hdr{'Newsgroups'};
+
+    # Bork
+    $mid =~ s/([\$"])/\\$1/g;
+    $from =~ s/([\$"])/\\$1/g;
+    $subject =~ s/([\$"])/\\$1/g;
+    $newsgroups =~ s/([\$"])/\\$1/g;
+
+    $myhash = hmac_sha512_base64($user.$body.$subject);
+
+    $arguments = '"' . $user . '" "' . $myhash . '" "' . $mid . '" "' . $from . '" "' . $subject . '" "' . $newsgroups . '"';
+
+    $rval = `/usr/bin/php /news/spam/bin/checkrate.php $arguments`;
+
+    copy("/news/spam/nnrpd/check/".$tempfile, $postedfile);
+
+    $sa_arguments = '"' . $tempfile . '" "' . $mid . '" "' . $from . '" "' . $subject . '" "' . $newsgroups . '"';
+    $spamvalue = `/usr/bin/php /news/spam/bin/i2pn2-spamassassin.php $sa_arguments`;
+    $isspam = "/news/spam/nnrpd/found/".$tempfile;
+
+    $note = '';
+
+    if (-e $isspam) {
+        $rval = "Blocked by Filter";
+        $note = "*SPAM* ";
+        unlink($isspam);
+        unlink($postedfile);
+    }
+
+# FR HIERARCHY - Too Many Groups without Followup-To
+    $is_fr_no_followup = "/news/spam/nnrpd/fr_no_followup/".$mid;
+    if (-e $is_fr_no_followup) {
+        unlink($is_fr_no_followup);
+        $rval = "Too Many Groups without Followup-To (fr.*)";
+    }
+
+    $is_ratelimit = "/news/spam/nnrpd/ratelimit/".$myhash;
+    if (-e $is_ratelimit) {
+        unlink($is_ratelimit);
+        $rval = "Posting Rate Limit Reached";
+    }
+
+    $is_multi = "/news/spam/nnrpd/multi/".$mid;
+    if (-e $is_multi) {
+        unlink($is_multi);
+        $rval = "Multipost not Allowed";
+    }
+
+    open(my $fh, '>>', $logfile);
+
+    @grouplist = split(/[,\s]+/, $hdr{'Newsgroups'});
+    $groupcnt = scalar @grouplist;
+
+    if ($groupcnt > 6) {
+        $note = $note . "*TOO MANY GROUPS* ";
+        $rval = "Too Many Newsgroups";
+    }
+
+    my $postinghash = hmac_sha256_base64($hostpath.$postingaccount);
+    print $fh "\n" . gmtime() . " Post in: " . $hdr{"Newsgroups"};
+    print $fh "\n    " . $note . "by: " . $user . " as " . $hdr{"From"};
+    print $fh "\n    Status: " . $rval;
+    print $fh "\n    posting-account: " . $postinghash;
+    print $fh "\n    message-id: " . $hdr{"Message-ID"};
+    close $fh;
+
+    open(my $hashfh, '>>', $hashfile);
+    print $hashfh "\n" . $postinghash . " : " .$user . " : " . $hdr{"From"};
+    close $fh;
+
+    return $rval;
+}
+
+sub analyze {
+    my ($lines, $quoted, $antiquoted) = (0, 0, 0);
+    local $_ = shift;
+
+    do {
+        if (/\G$config{quotere}/mgc) {
+            $quoted++;
+        } elsif (/\G$config{antiquotere}/mgc) {
+            $antiquoted++;
+        }
+    } while (/\G(.*)\n/gc && ++$lines);
+
+    return ($lines, $quoted, $antiquoted);
+}
+
+sub add_header($$$) {
+   my ( $r_hdr, $name, $value ) = @_;
+
+   $r_hdr->{$name} = $value;
+}
+
+sub add_header_item($$$) {
+   my ( $r_hdr, $name, $value ) = @_;
+
+#  Set $hostpath to match message-id domain in inn.conf
+   my $hostpath = "novabbs.org";
+   my $prefix = $r_hdr->{$name};
+   $myhash = hmac_sha256_base64($hostpath.$value);
+   my $injection = $r_hdr->{"Injection-Info"};
+
+   $r_hdr->{$name} = $injection . ";\r\n\t" . 'posting-account="' .$myhash .'";';
+}
+
+sub set_message_id($$$) {
+   my ( $r_hdr, $name, $value ) = @_;
+
+#  Set $hostpath to match message-id domain in inn.conf
+   my $hostpath = "novabbs.org";
+   if($r_hdr->{"Message-ID"} =~ /\@$hostpath\>$/) {
+       my $msgid = $r_hdr->{"Subject"} . $r_hdr->{"From"} . $r_hdr->{"Newsgroups"} . $r_hdr->{"References"} . $value;
+       $myhash = sha1_hex($hostpath.$msgid);
+       $r_hdr->{$name} = '<' . $myhash . '@' . $hostpath . '>';
+   }
+}
+
+sub filter_end {
+    # Do whatever you want to clean up things when Perl filtering is disabled.
+}
+# EOF # filter_nnrpd.pl

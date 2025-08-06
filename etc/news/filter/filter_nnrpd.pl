@@ -11,23 +11,36 @@
 # - All user-controlled data hashed before filesystem operations
 # - Control character filtering throughout
 # - SpamAssassin checking made optional via config flag
+# - Centralized rate limiting through checkrate.php (single source of truth)
+#
+# ARCHITECTURE:
+# =============
+# - checkrate.php: Handles ALL rate limiting logic and returns decisions directly
+# - filter_nnrpd.pl: Trusts checkrate.php results, no redundant signal file checks
+# - Organization header injection: Optional, configurable header addition
+# - SpamAssassin integration: Optional spam detection via i2pn2-spamassassin.php
 #
 # MISSING FILES THAT NEED TO BE RESTORED:
 # =====================================
 # 1. /news/spam/bin/checkrate.php         - Rate limiting logic ✅ RESTORED
 # 2. /news/spam/bin/i2pn2-spamassassin.php - SpamAssassin integration ✅ RESTORED
-# 3. /etc/inn/inn.conf                    - Should contain pathhost setting
+# 3. /etc/news/inn.conf                   - INN configuration ✅ NOW READING PATHHOST
 #
-# MISSING DIRECTORIES THAT NEED TO BE CREATED:
-# ============================================
-# /news/spam/log/                  - Log files
-# /news/spam/data/                 - Data files (hashes, etc)
-# /news/spam/nnrpd/check/          - Temp files for checking
-# /news/spam/nnrpd/found/          - Signal files for spam detection
-# /news/spam/nnrpd/fr_no_followup/ - Signal files for FR hierarchy rules
-# /news/spam/nnrpd/ratelimit/      - Signal files for rate limiting
-# /news/spam/nnrpd/multi/          - Signal files for multipost detection
+# REQUIRED DIRECTORIES:
+# ====================
+# /news/spam/log/                  - Log files (nnrpd.log, debug.log)
+# /news/spam/data/                 - Data files (posting_users.hash)
+# /news/spam/nnrpd/check/          - Temp files for message processing
+# /news/spam/nnrpd/found/          - Signal files for SpamAssassin detection
+# /news/spam/nnrpd/php_user_rates/ - User rate tracking files (checkrate.php only)
 # /news/spam/posted/               - Archive of posted messages
+#
+# REMOVED/UNUSED DIRECTORIES:
+# ===========================
+# /news/spam/nnrpd/fr_no_followup/ - OBSOLETE: Was for FR hierarchy rules
+# /news/spam/nnrpd/ratelimit/      - OBSOLETE: Was for signal-based rate limiting
+# /news/spam/nnrpd/multi/          - OBSOLETE: Was for multipost detection
+# (These are now handled directly by checkrate.php return values)
 #
 # Do any initialization steps.
 #
@@ -54,15 +67,38 @@ sub shell_escape {
     return $arg;
 }
 
+# Function to read pathhost from inn.conf
+sub read_pathhost_from_inn_conf {
+    my $inn_conf = "/etc/news/inn.conf";
+    my $pathhost = "";
+
+    if (open(my $fh, '<', $inn_conf)) {
+        while (my $line = <$fh>) {
+            chomp $line;
+            # Skip comments and empty lines
+            next if $line =~ /^\s*#/ || $line =~ /^\s*$/;
+            # Look for pathhost setting (with or without whitespace around colon)
+            if ($line =~ /^\s*pathhost\s*:\s*(.+?)$/) {
+                $pathhost = $1;
+                $pathhost =~ s/^\s+|\s+$//g;  # Trim whitespace
+                last;
+            }
+        }
+        close $fh;
+    }
+
+    return $pathhost;
+}
+
 my %config = (
-    hostpath          => "reader-nyc.newsdeef.eu",  # Central hostname configuration
-    trusted_servers   => "pi-dach\\.dorfdsl\\.de",  # Trusted relay servers/users
-    enable_spamassassin => 1,                  # Enable/disable SpamAssassin checking (1=enabled, 0=disabled)
-    organization      => "",                   # Optional Organization header to inject if none exists (empty = disabled)
-    checkincludedtext => 0,
-    includedcutoff    => 40,
-    includedratio     => 0.6,
-    quotere           => '^[>:]',
+    hostpath          => "",        # Will be read from inn.conf
+    trusted_servers   => "",        # Trusted relay servers/users
+    enable_spamassassin => 0,       # Enable/disable SpamAssassin checking (1=enabled, 0=disabled)
+    organization      => "",        # Optional Organization header to inject if none exists (empty = disabled)
+    checkincludedtext => 0,         # Check Quote option
+    includedcutoff    => 40,        # Check Quote option
+    includedratio     => 0.6,       # Check Quote option
+    quotere           => '^[>:]',   # Check Quote option
     antiquotere       => '^[<]',    # so as not to reject dict(1) output
 );
 
@@ -72,16 +108,31 @@ my %config = (
 sub filter_post {
     my $rval = "";    # assume we'll accept.
     $logfile = "/news/spam/log/nnrpd.log";
+    $debuglog = "/news/spam/log/debug.log";
     $hashfile = "/news/spam/data/posting_users.hash";
+
+    # DEBUG: Log filter start
+    open(my $debug_fh, '>>', $debuglog);
+    print $debug_fh "\n" . gmtime() . " DEBUG: filter_post started for user: $user";
+    close $debug_fh;
 
     $modify_headers = 1;
     $ver = "SpamAssassin 4.0.0";
 
     $postingaccount = $user;
 
-    # MISSING FILE: Should read hostname from /etc/inn/inn.conf instead of hardcoding
-    # TODO: Add functionality to read pathhost from inn.conf
-    my $hostpath = $config{hostpath};
+    # Read hostname from /etc/news/inn.conf
+    my $hostpath = read_pathhost_from_inn_conf();
+    if (!$hostpath) {
+        # Fallback to hardcoded value if inn.conf reading fails
+        $hostpath = "localhost";
+        open(my $debug_fh_err, '>>', $debuglog);
+        print $debug_fh_err "\n" . gmtime() . " WARNING: Could not read pathhost from inn.conf, using fallback: $hostpath";
+        close $debug_fh_err;
+    }
+
+    # Update config with the read value for use in other functions
+    $config{hostpath} = $hostpath;
 
     # SPECIAL HANDLING FOR TRUSTED NEWS SERVERS/USERS
     # ===============================================
@@ -106,6 +157,11 @@ sub filter_post {
         add_header_item(\%hdr, 'Injection-Info', $user );
     }
     set_message_id(\%hdr, 'Message-ID', $body);
+
+    # DEBUG: Log after message-id generation
+    open(my $debug_fh2, '>>', $debuglog);
+    print $debug_fh2 "\n" . gmtime() . " DEBUG: message-id set to: " . $hdr{"Message-ID"};
+    close $debug_fh2;
 
     # Inject Organization header if configured and not already present
     if ($config{organization} ne "" && !exists $hdr{"Organization"}) {
@@ -153,7 +209,18 @@ sub filter_post {
 
     $myhash = hmac_sha512_base64($user.$body.$subject);
     $arguments = '"' . $user_safe . '" "' . $myhash . '" "' . $mid_safe . '" "' . $from_safe . '" "' . $subject_safe . '" "' . $newsgroups_safe . '"';
+
+    # DEBUG: Log before checkrate call
+    open(my $debug_fh3, '>>', $debuglog);
+    print $debug_fh3 "\n" . gmtime() . " DEBUG: calling checkrate.php with myhash: " . substr($myhash, 0, 16) . "...";
+    close $debug_fh3;
+
     $rval = `/usr/bin/php /news/spam/bin/checkrate.php $arguments`;
+
+    # DEBUG: Log after checkrate call
+    open(my $debug_fh4, '>>', $debuglog);
+    print $debug_fh4 "\n" . gmtime() . " DEBUG: checkrate.php returned: '$rval'";
+    close $debug_fh4;
 
     copy($tempfile_path, $postedfile);
 
@@ -174,31 +241,16 @@ sub filter_post {
         }
     }
 
-# SECURITY FIX: Use hashed filenames for signal files to prevent path traversal
-    my $mid_hash = safe_filename_hash($mid);
-    my $myhash_safe = safe_filename_hash($myhash);
-
-# FR HIERARCHY - Too Many Groups without Followup-To
-    $is_fr_no_followup = "/news/spam/nnrpd/fr_no_followup/".$mid_hash;
-    if (-e $is_fr_no_followup) {
-        unlink($is_fr_no_followup);
-        $rval = "Too Many Groups without Followup-To (fr.*)";
-    }
-
-    $is_ratelimit = "/news/spam/nnrpd/ratelimit/".$myhash_safe;
-    if (-e $is_ratelimit) {
-        unlink($is_ratelimit);
-        $rval = "Posting Rate Limit Reached";
-    }
-
-    $is_multi = "/news/spam/nnrpd/multi/".$mid_hash;
-    if (-e $is_multi) {
-        unlink($is_multi);
-        $rval = "Multipost not Allowed";
-    }
+    # NOTE: Rate limiting is now handled entirely by checkrate.php
+    # No need for redundant signal file checks here - checkrate.php is the single source of truth
 
     # Clean up temp file if we haven't copied it
     unlink($tempfile_path) if (-e $tempfile_path);
+
+    # DEBUG: Log before final processing
+    open(my $debug_fh5, '>>', $debuglog);
+    print $debug_fh5 "\n" . gmtime() . " DEBUG: entering final processing, rval: '$rval'";
+    close $debug_fh5;
 
     open(my $fh, '>>', $logfile);
 
@@ -234,6 +286,11 @@ sub filter_post {
     open(my $hashfh, '>>', $hashfile);
     print $hashfh "\n" . $postinghash . " : " .$log_user . " : " . $log_from;
     close $hashfh;  # BUG FIX: was closing $fh instead of $hashfh
+
+    # DEBUG: Log filter completion
+    open(my $debug_fh6, '>>', $debuglog);
+    print $debug_fh6 "\n" . gmtime() . " DEBUG: filter_post completed, returning: '$rval'";
+    close $debug_fh6;
 
     return $rval;
 }
@@ -273,12 +330,10 @@ sub add_header_item($$$) {
 sub set_message_id($$$) {
    my ( $r_hdr, $name, $value ) = @_;
 
-   # Use centralized hostname configuration
-   if($r_hdr->{"Message-ID"} =~ /\@$config{hostpath}\>$/) {
-       my $msgid = $r_hdr->{"Subject"} . $r_hdr->{"From"} . $r_hdr->{"Newsgroups"} . $r_hdr->{"References"} . $value;
-       $myhash = sha1_hex($config{hostpath}.$msgid);
-       $r_hdr->{$name} = '<' . $myhash . '@' . $config{hostpath} . '>';
-   }
+   # Generate a new Message-ID
+   my $msgid = $r_hdr->{"Subject"} . $r_hdr->{"From"} . $r_hdr->{"Newsgroups"} . ($r_hdr->{"References"} || "") . $value;
+   $myhash = sha1_hex($config{hostpath}.$msgid);
+   $r_hdr->{$name} = '<' . $myhash . '@' . $config{hostpath} . '>';
 }
 
 sub filter_end {

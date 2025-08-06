@@ -1,0 +1,29 @@
+auth "localhost" {
+    hosts: "localhost, 127.0.0.1, ::1, stdin"
+    default: "<localhost>"
+}
+access "localhost" {
+    users: "<localhost>"
+    newsgroups: "*"
+    access: RPA
+    addcanlockuser: none
+}
+
+auth "read-only" {
+    hosts: "*, !localhost, !127.0.0.1, !::1"
+    default: "<read>"
+}
+access "read-only" {
+    users: "<read>,!<localhost>"
+    read: "*"
+}
+
+auth "events-only" {
+    hosts: "*"
+    auth: "ckpasswd -f /etc/news/bbsuser.passwd"
+}
+access "events-only" {
+    users: "*,!<localhost>,!<read>"
+    newsgroups: "*,!control*,!junk*,!local.*,!Local.*"
+    access: "RP"
+}

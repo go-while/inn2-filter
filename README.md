@@ -1,221 +1,155 @@
-# INN2 PERL Filter - Security Hardened Version <<-- AI invented that -->>
+# INN2 Perl Filter
 
-A recovered and security-hardened NNRPD spam filter
-for INN (InterNetNews) originally from novabbs.org / i2pn2.org.
+# STATUS: UNSTABLE! TESTING!
 
-## 🛡️ Security Improvements
+This is a security-hardened NNTP spam filter for INN (InterNetNews) with a simplified, single-source-of-truth architecture.
 
-This version has been completely security-hardened to
-eliminate critical vulnerabilities found in the original code:
+## Architecture Overview
 
-### ✅ Major Security Fixes Applied
+### Core Components
 
-1. **Path Traversal Prevention**
-   - Added `safe_filename_hash()` function - all user data is SHA256 hashed before filesystem operations
-   - No raw user data in file paths - prevents `../../../etc/passwd` attacks
-   - All signal files use secure hashed filenames
+1. **filter_nnrpd.pl** - Main Perl filter that integrates with INN2
+   - Handles header injection (Message-ID, Injection-Info, Organization)
+   - Coordinates with external components
+   - Performs final logging and accounting
 
-2. **Command Injection Prevention**
-   - Enhanced `shell_escape()` function with comprehensive metacharacter escaping
-   - Escapes: `$`, `` ` ``, `"`, `\`, `|`, `;`, `&`, `<`, `>`, `(`, `)`, `{`, `}`, `[`, `]`, `*`, `?`, `~`, whitespace
-   - Control character removal - strips null bytes and control chars
+2. **checkrate.php** - Centralized rate limiting (single source of truth)
+   - User-based rate limiting (time between posts)
+   - Content-based rate limiting (prevent rapid reposting)
+   - Hourly post limits
+   - Cross-posting restrictions
+   - Returns decisions directly (no signal files)
 
-3. **Secure Temporary Files**
-   - Replaced `rand(100)` with `File::Temp` - cryptographically secure temp files
-   - Automatic cleanup and unpredictable filenames
-   - No more race conditions
+3. **i2pn2-spamassassin.php** - Optional SpamAssassin integration
+   - Spam detection using SpamAssassin
+   - Signal file communication for spam detection results
 
-4. **Log Injection Prevention**
-   - Input sanitization for logs - control characters replaced with `_`
-   - Newline removal prevents log structure manipulation
-   - Separate sanitized variables for logging
+### Key Design Principles
 
-5. **Input Validation**
-   - Control character filtering throughout the application
-   - Null byte removal prevents null byte injection attacks
+- **Single Source of Truth**: Only checkrate.php handles rate limiting
+- **Direct Communication**: Return values instead of signal files for rate limiting
+- **Security Hardened**: Input sanitization, secure file handling, path traversal prevention
+- **Configurable**: Enable/disable components via config flags
 
-### 🔄 Security Example
+## Directory Structure
 
-**Before (vulnerable):**
-```
-User input: From: ../../../etc/passwd
-File path: /news/spam/posted/../../../etc/passwd
-Result: ATTACK SUCCEEDS ❌
-```
-
-**After (secure):**
-```
-User input: From: ../../../etc/passwd
-Hashed: safe_filename_hash("../../../etc/passwd") → a1b2c3d4e5f6...
-File path: /news/spam/posted/a1b2c3d4e5f6...-msgid_hash
-Result: ATTACK BLOCKED ✅
-```
-
-## 📁 Project Structure
-
-```
-inn2-filter/
-├── etc/news/filter/
-│   └── filter_nnrpd.pl          # Main Perl spam filter (security hardened)
-├── news/spam/bin/
-│   ├── checkrate.php             # Rate limiting engine ✅ RESTORED
-│   └── i2pn2-spamassassin.php    # SpamAssassin integration ✅ RESTORED
-└── README.md                     # This file
-```
-
-### Required Runtime Directories
-
-The following directories will be created automatically by the scripts:
-
+### Required Directories
 ```
 /news/spam/
-├── log/                  # Log files
-├── data/                 # Data files (hashes, etc)
+├── log/                     # Log files
+│   ├── nnrpd.log           # Main filter log
+│   └── debug.log           # Debug output
+├── data/                    # Data files
+│   └── posting_users.hash  # User posting history
+├── bin/                     # Executable scripts
+│   ├── checkrate.php       # Rate limiting logic
+│   └── i2pn2-spamassassin.php # SpamAssassin integration
 ├── nnrpd/
-│   ├── check/            # Temp files for checking
-│   ├── found/            # Signal files for spam detection
-│   ├── fr_no_followup/   # Signal files for FR hierarchy rules
-│   ├── ratelimit/        # Signal files for rate limiting
-│   ├── multi/            # Signal files for multipost detection
-│   └── user_rates/       # User-based rate tracking
-└── posted/               # Archive of posted messages
+│   ├── check/              # Temporary message files
+│   ├── found/              # SpamAssassin detection signals
+│   └── php_user_rates/     # User rate tracking
+└── posted/                 # Archive of posted messages
 ```
 
-## 🚀 Components
+### Obsolete Directories (removed in clean architecture)
+- `/news/spam/nnrpd/ratelimit/` - Old signal-based rate limiting
+- `/news/spam/nnrpd/multi/` - Old multipost detection signals
+- `/news/spam/nnrpd/fr_no_followup/` - Old FR hierarchy signals
 
-### 1. Main Filter (`filter_nnrpd.pl`)
+## Configuration
 
-**Security-hardened Perl filter for INN NNRPD that:**
-- Validates and sanitizes all inputs using hash-based filenames
-- Integrates with SpamAssassin for content analysis
-- Implements rate limiting to prevent spam floods
-- Logs all activity securely without injection vulnerabilities
-- Supports trusted relay servers (web-to-news gateways)
-
-### 2. Rate Limiting Engine (`checkrate.php`)
-
-**File-based rate limiting system featuring:**
-- **Content-based limiting**: 5-minute cooldown between identical posts
-- **User-based limiting**: 1-minute cooldown between posts from same user
-- **Hourly limits**: Maximum 50 posts per hour per user
-- **Cross-posting restrictions**: 30-minute cooldown for posts to >3 newsgroups
-- **Automatic cleanup**: 24-hour file retention
-- **Security**: Hash-based filenames, no raw user data on filesystem
-
-### 3. SpamAssassin Integration (`i2pn2-spamassassin.php`)
-
-**Secure SpamAssassin wrapper that:**
-- Analyzes message content using SpamAssassin (`spamc` or `spamassassin`)
-- Configurable spam threshold (default: 5.0)
-- Creates signal files for detected spam
-- Comprehensive logging with sanitized metadata
-- Safe command execution via `proc_open()` - no shell injection possible
-
-## ⚙️ Configuration
-
-### Main Configuration (`filter_nnrpd.pl`)
-
+### filter_nnrpd.pl Configuration
 ```perl
 my %config = (
-    hostpath          => "novabbs.org",     # Your hostname
-    trusted_servers   => "mm2021|rocksolidbbs\\.com|novabbs\\.(com|org)", # Trusted relays
-    enable_spamassassin => 1,               # Enable/disable SpamAssassin checking (1=enabled, 0=disabled)
-    checkincludedtext => 0,
-    includedcutoff    => 40,
-    includedratio     => 0.6,
-    quotere           => '^[>:]',           # Quote detection
-    antiquotere       => '^[<]',            # Anti-quote detection
+    hostpath            => "your.news.server",  # Hostname for Message-ID generation (read from inn.conf if empty)
+    trusted_servers     => "trusted\\.server",  # Regex for trusted relay servers (  )
+    enable_spamassassin => 0,                   # 1=enabled, 0=disabled
+    organization        => "",                  # Optional Organization header (empty=disabled)
 );
 ```
 
-### Rate Limiting Configuration (`checkrate.php`)
-
+### checkrate.php Configuration
 ```php
-$content_rate_limit = 300;  # 5 minutes between identical content
-$user_rate_limit = 60;      # 1 minute between posts from same user
-$user_hourly_limit = 50;    # Max posts per hour per user
-$crosspost_limit = 1800;    # 30 minutes for posts to >3 groups
+$content_rate_limit = 300;    // 5 minutes between identical content
+$user_rate_limit = 60;        // 1 minute between posts per user
+$user_hourly_limit = 50;      // Max 50 posts per hour per user
 ```
 
-### SpamAssassin Configuration (`i2pn2-spamassassin.php`)
+## Installation
 
-```php
-$SPAM_THRESHOLD = 5.0;      # SpamAssassin score threshold
-```
-
-## 🔧 Installation
-
-1. **Copy filter to INN:**
+1. Run the setup script to create directories:
    ```bash
-   cp etc/news/filter/filter_nnrpd.pl /etc/news/filter/
+   chmod +x setup_directories.sh
+   sudo ./setup_directories.sh
    ```
 
-2. **Install PHP components:**
+2. Copy filter files to appropriate locations:
    ```bash
-   mkdir -p /news/spam/bin/
+   cp etc/news/filter/filter_nnrpd.pl /etc/news/filter/
    cp news/spam/bin/*.php /news/spam/bin/
    chmod +x /news/spam/bin/*.php
    ```
 
-3. **Configure INN to use the filter:**
-   The filter will be automatically loaded from `/etc/news/filter/filter_nnrpd.pl`
-   when INN2 is compiled with Perl filtering support.
-
-4. **Install dependencies:**
-   ```bash
-   # Perl modules
-   cpan Digest::SHA File::Temp File::Copy
-
-   # SpamAssassin
-   apt-get install spamassassin  # or yum install spamassassin
+3. Configure INN to use the filter in `/etc/news/readers.conf`:
+   ```
+   access localhost {
+       users: "*"
+       auth: "ckpasswd -f /news/bbsuser.passwd"
+       perlfilter: on
+   }
    ```
 
-## 📊 Monitoring
+## Features
 
-### Log Files
+### Security Enhancements
+- Path traversal attack prevention
+- Shell injection prevention
+- Secure temporary file handling
+- Input sanitization for logs
+- Control character filtering
 
-- **Main activity**: `/news/spam/log/nnrpd.log`
-- **SpamAssassin**: `/news/spam/log/spamassassin.log`
-- **User tracking**: `/news/spam/data/posting_users.hash`
+### Rate Limiting
+- User-based rate limiting with wait times
+- Content duplicate detection
+- Hourly posting limits
+- Cross-posting restrictions
+- Clear error messages with remaining wait time
 
-### Log Format Example
+### Header Management
+- Automatic Message-ID generation
+- Injection-Info header with posting account hash
+- Optional Organization header injection
+- Support for trusted relay servers (X-Rslight-Posting-User)
 
+### Logging & Monitoring
+- Comprehensive logging with timestamps
+- Debug logging for troubleshooting
+- User posting history tracking
+- Message archiving
+
+## Error Messages
+
+Rate limiting returns user-friendly messages:
+- `User Rate Limit Reached (wait 01:23)` - 1 minute 23 seconds remaining
+- `Content Rate Limit Reached (wait 04:17)` - 4 minutes 17 seconds remaining
+- `Hourly Post Limit Exceeded (resets in 23:45)` - 23 minutes until reset
+- `Cross-posting Rate Limit (wait 15:30)` - 15 minutes 30 seconds remaining
+
+## Migration from Old Architecture
+
+If migrating from the old signal-file based system:
+1. Remove old signal file directories
+2. Update any scripts that were manually creating signal files
+3. All rate limiting logic is now centralized in checkrate.php
+
+## Troubleshooting
+
+Check debug logs for detailed operation flow:
+```bash
+tail -f /news/spam/log/debug.log
 ```
-2025-08-05 12:34:56 Post in: alt.test,misc.test
-    by: testuser as test@example.com
-    Status:
-    posting-account: a1b2c3d4e5f6...
-    message-id: <abcd1234@novabbs.org>
-```
 
-## ⚠️ Security Notes
-
-- **All user data is hashed** before filesystem operations
-- **No raw user input** appears in file paths
-- **Shell commands are properly escaped** or avoided entirely
-- **Temporary files are cryptographically secure**
-- **Log injection is prevented** through input sanitization
-
-## 📚 Background
-
-This filter was originally deployed on novabbs.org/i2pn2.org news servers.
-The original code contained severe security vulnerabilities including:
-
-- Path traversal attacks via user headers
-- Command injection through inadequate shell escaping
-- Predictable temporary file generation
-- Log injection vulnerabilities
-- Raw user data in filesystem paths
-
-This hardened version maintains all original functionality while eliminating these security risks.
-
-## 🤝 Contributing
-
-For security issues or improvements, please review the code carefully!
-AND test in a safe environment before deployment!
-
----
-
-**⚠️ Important**:
-This code handles user input and executes system commands.
-Always review security implications before deployment in production environments.
+Common issues:
+- Permission problems: Ensure news user can write to all directories
+- PHP execution: Verify PHP path in filter (`/usr/bin/php`)
+- Missing directories: Run setup script to create required structure

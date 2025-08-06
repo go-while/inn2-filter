@@ -26,8 +26,8 @@ $subject = $argv[5];       // Subject header
 $newsgroups = $argv[6];    // Newsgroups header
 
 // Configuration
-$rate_base_dir = "/news/spam/nnrpd/ratelimit/";
-$user_rate_dir = "/news/spam/nnrpd/user_rates/";
+$rate_base_dir = "/news/spam/nnrpd/php_ratelimit/";
+$user_rate_dir = "/news/spam/nnrpd/php_user_rates/";
 $current_time = time();
 
 // Rate limiting rules
@@ -50,12 +50,6 @@ $clean_myhash = preg_replace('/[\x00-\x1f\x7f-\x9f]/', '', $myhash);
 $content_hash = hash('sha256', $clean_myhash);
 $user_hash = hash('sha256', $user);
 
-// DEBUG: Log the hash values for troubleshooting
-error_log("checkrate.php DEBUG: myhash=" . $myhash);
-error_log("checkrate.php DEBUG: clean_myhash=" . $clean_myhash);
-error_log("checkrate.php DEBUG: content_hash=" . $content_hash);
-error_log("checkrate.php DEBUG: content_rate_file=" . $rate_base_dir . $content_hash);
-
 // 1. CHECK CONTENT-BASED RATE LIMITING (prevent rapid reposting of same content)
 $content_rate_file = $rate_base_dir . $content_hash;
 if (file_exists($content_rate_file)) {
@@ -63,9 +57,8 @@ if (file_exists($content_rate_file)) {
     $time_diff = $current_time - $last_post_time;
 
     if ($time_diff < $content_rate_limit) {
-        // Create signal file for Perl script to detect
-        touch($content_rate_file);
-        echo "Content Rate Limit Reached";
+        $wait_time = $content_rate_limit - $time_diff;
+        echo "Content Rate Limit Reached (wait " . gmdate("i:s", $wait_time) . ")";
         exit(1);
     }
 }
@@ -77,10 +70,8 @@ if (file_exists($user_rate_file)) {
     $user_time_diff = $current_time - $last_user_post;
 
     if ($user_time_diff < $user_rate_limit) {
-        // Create signal file
-        $signal_file = $rate_base_dir . $content_hash;
-        touch($signal_file);
-        echo "User Rate Limit Reached";
+        $wait_time = $user_rate_limit - $user_time_diff;
+        echo "User Rate Limit Reached (wait " . gmdate("i:s", $wait_time) . ")";
         exit(1);
     }
 }
@@ -101,9 +92,8 @@ if (file_exists($hourly_file)) {
     }
 
     if ($posts_this_hour >= $user_hourly_limit) {
-        $signal_file = $rate_base_dir . $content_hash;
-        touch($signal_file);
-        echo "Hourly Post Limit Exceeded";
+        $time_until_reset = 3600 - ($current_time - (int)$hour_start);
+        echo "Hourly Post Limit Exceeded (resets in " . gmdate("i:s", $time_until_reset) . ")";
         exit(1);
     }
 } else {
@@ -120,9 +110,8 @@ if ($newsgroup_count > 3) {
 
         // Require 30 minutes between cross-posts
         if ($time_diff < 1800) {
-            $signal_file = $rate_base_dir . $content_hash;
-            touch($signal_file);
-            echo "Cross-posting Rate Limit";
+            $wait_time = 1800 - $time_diff;
+            echo "Cross-posting Rate Limit (wait " . gmdate("i:s", $wait_time) . ")";
             exit(1);
         }
     }
