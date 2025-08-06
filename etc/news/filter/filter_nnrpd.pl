@@ -55,9 +55,10 @@ sub shell_escape {
 }
 
 my %config = (
-    hostpath          => "novabbs.org",        # Central hostname configuration
-    trusted_servers   => "mm2021|rocksolidbbs\\.com|novabbs\\.(com|org)", # Trusted relay servers/users
+    hostpath          => "reader-nyc.newsdeef.eu",  # Central hostname configuration
+    trusted_servers   => "pi-dach\\.dorfdsl\\.de",  # Trusted relay servers/users
     enable_spamassassin => 1,                  # Enable/disable SpamAssassin checking (1=enabled, 0=disabled)
+    organization      => "",                   # Optional Organization header to inject if none exists (empty = disabled)
     checkincludedtext => 0,
     includedcutoff    => 40,
     includedratio     => 0.6,
@@ -79,17 +80,13 @@ sub filter_post {
     $postingaccount = $user;
 
     # MISSING FILE: Should read hostname from /etc/inn/inn.conf instead of hardcoding
-    # TODO: Restore functionality to read pathhost from inn.conf
+    # TODO: Add functionality to read pathhost from inn.conf
     my $hostpath = $config{hostpath};
 
     # SPECIAL HANDLING FOR TRUSTED NEWS SERVERS/USERS
     # ===============================================
     # This section handles posts from trusted news servers that may be relaying
     # posts from other systems (like web-to-news gateways or other news servers).
-    #
-    # - mm2021: Likely a trusted user account
-    # - rocksolidbbs.com: Another BBS/news system that feeds into this server
-    # - novabbs.com/org: The local domain(s) for this news server
     #
     # For these trusted sources, we check for an "X-Rslight-Posting-User" header
     # which contains the REAL original poster's username (Rslight is a web-to-news gateway).
@@ -109,7 +106,11 @@ sub filter_post {
         add_header_item(\%hdr, 'Injection-Info', $user );
     }
     set_message_id(\%hdr, 'Message-ID', $body);
-    add_header(\%hdr, 'X-Spam-Checker-Version', $ver );
+
+    # Inject Organization header if configured and not already present
+    if ($config{organization} ne "" && !exists $hdr{"Organization"}) {
+        add_header(\%hdr, 'Organization', $config{organization});
+    }
 
     # SECURITY FIX: Use hashed filenames instead of raw user data
     my $from_hash = safe_filename_hash($hdr{"From"});
@@ -160,6 +161,7 @@ sub filter_post {
 
     # SpamAssassin integration - OPTIONAL (controlled by config flag)
     if ($config{enable_spamassassin}) {
+        add_header(\%hdr, 'X-Spam-Checker-Version', $ver );
         $sa_arguments = '"' . $tempfile_base . '" "' . $mid_safe . '" "' . $from_safe . '" "' . $subject_safe . '" "' . $newsgroups_safe . '"';
         $spamvalue = `/usr/bin/php /news/spam/bin/i2pn2-spamassassin.php $sa_arguments`;
         $isspam = "/news/spam/nnrpd/found/".$tempfile_base;
