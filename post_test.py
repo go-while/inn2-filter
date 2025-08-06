@@ -225,7 +225,7 @@ If you can read this message, the posting was successful!
 Technical details:
 - Posted via NNTPLIB Python library
 - Timestamp: {timestamp}
-- Script: post_test.py v1.0
+- Script: post_test.py v1.1
 
 TESTING ratelimit: https://github.com/go-while/inn2-filter
 
