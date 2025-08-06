@@ -44,8 +44,17 @@ if (!is_dir($user_rate_dir)) {
 }
 
 // Security: Hash the myhash to prevent path traversal
-$content_hash = hash('sha256', $myhash);
+// NOTE: Must match the safe_filename_hash() function in Perl filter
+// Perl does: sha256_hex($input) where $input has control chars removed
+$clean_myhash = preg_replace('/[\x00-\x1f\x7f-\x9f]/', '', $myhash);
+$content_hash = hash('sha256', $clean_myhash);
 $user_hash = hash('sha256', $user);
+
+// DEBUG: Log the hash values for troubleshooting
+error_log("checkrate.php DEBUG: myhash=" . $myhash);
+error_log("checkrate.php DEBUG: clean_myhash=" . $clean_myhash);
+error_log("checkrate.php DEBUG: content_hash=" . $content_hash);
+error_log("checkrate.php DEBUG: content_rate_file=" . $rate_base_dir . $content_hash);
 
 // 1. CHECK CONTENT-BASED RATE LIMITING (prevent rapid reposting of same content)
 $content_rate_file = $rate_base_dir . $content_hash;
