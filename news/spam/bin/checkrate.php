@@ -102,6 +102,8 @@ if (file_exists($user_rate_file)) {
 // 3. CHECK HOURLY POST LIMIT (prevent spam floods)
 $hourly_file = $user_rate_dir . $user_safe . "_hourly";
 $posts_this_hour = 0;
+$hour_start = $current_time;  // Default for new files
+
 if (file_exists($hourly_file)) {
     $hourly_data = file_get_contents($hourly_file);
     list($hour_start, $post_count) = explode(":", $hourly_data);
@@ -113,14 +115,13 @@ if (file_exists($hourly_file)) {
     } else {
         $posts_this_hour = (int)$post_count;
     }
+}
 
-    if ($posts_this_hour >= $user_hourly_limit) {
-        $time_until_reset = 3600 - ($current_time - (int)$hour_start);
-        echo "Hourly Post Limit Exceeded (resets in " . gmdate("i:s", $time_until_reset) . ")";
-        exit(1);
-    }
-} else {
-    $hour_start = $current_time;
+// Check hourly limit (applies to both existing and new files)
+if ($posts_this_hour >= $user_hourly_limit) {
+    $time_until_reset = 3600 - ($current_time - (int)$hour_start);
+    echo "Hourly Post Limit Exceeded (resets in " . gmdate("i:s", $time_until_reset) . ")";
+    exit(1);
 }
 
 // 4. CHECK FOR EXCESSIVE CROSS-POSTING
