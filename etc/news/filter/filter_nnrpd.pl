@@ -95,6 +95,7 @@ my %config = (
     trusted_servers   => "",        # Trusted relay servers/users
     enable_spamassassin => 0,       # Enable/disable SpamAssassin checking (1=enabled, 0=disabled)
     organization      => "",        # Optional Organization header to inject if none exists (empty = disabled)
+    remove_headers    => "User-Agent,X-Newsreader,X-Mailer,X-User-Agent", # Comma-separated list of headers to remove for privacy (empty = disabled)
     checkincludedtext => 0,         # Check Quote option
     includedcutoff    => 40,        # Check Quote option
     includedratio     => 0.6,       # Check Quote option
@@ -116,7 +117,6 @@ sub filter_post {
     print $debug_fh "\n" . gmtime() . " DEBUG: filter_post started for user: $user";
     close $debug_fh;
 
-    $modify_headers = 1;
     $ver = "SpamAssassin 4.0.0";
 
     $postingaccount = $user;
@@ -167,6 +167,24 @@ sub filter_post {
     if ($config{organization} ne "" && !exists $hdr{"Organization"}) {
         add_header(\%hdr, 'Organization', $config{organization});
     }
+
+    # Remove privacy-sensitive headers if configured
+    if ($config{remove_headers} ne "") {
+        my @headers_to_remove = split(/,\s*/, $config{remove_headers});
+        foreach my $header_name (@headers_to_remove) {
+            $header_name =~ s/^\s+|\s+$//g;  # Trim whitespace
+            if (exists $hdr{$header_name}) {
+                $hdr{$header_name} = undef;  # Use undef instead of delete as recommended by INN docs
+                # DEBUG: Log header removal
+                open(my $debug_fh_remove, '>>', $debuglog);
+                print $debug_fh_remove "\n" . gmtime() . " DEBUG: removed header for privacy: $header_name";
+                close $debug_fh_remove;
+            }
+        }
+    }
+
+    # Enable header modifications - must be set after all header changes
+    $modify_headers = 1;
 
     # SECURITY FIX: Use hashed filenames instead of raw user data
     my $from_hash = safe_filename_hash($hdr{"From"});
