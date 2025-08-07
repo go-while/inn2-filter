@@ -173,20 +173,20 @@ sub filter_post {
     close $debug_fh2;
 
     # DEBUG: Log all available headers in %hdr
-    open(my $debug_hdr, '>>', $debuglog);
-    print $debug_hdr "\n" . gmtime() . " DEBUG: %hdr contents:";
-    foreach my $key (sort keys %hdr) {
-        my $value = defined $hdr{$key} ? $hdr{$key} : 'undef';
-        # Truncate very long values like __BODY__
-        if (length($value) > 100) {
-            $value = substr($value, 0, 100) . "... [truncated]";
-        }
-        # Replace newlines for cleaner logging
-        $value =~ s/\n/\\n/g;
-        $value =~ s/\r/\\r/g;
-        print $debug_hdr "\n  $key => '$value'";
-    }
-    close $debug_hdr;
+    #open(my $debug_hdr, '>>', $debuglog);
+    #print $debug_hdr "\n" . gmtime() . " DEBUG: %hdr contents:";
+    #foreach my $key (sort keys %hdr) {
+    #    my $value = defined $hdr{$key} ? $hdr{$key} : 'undef';
+    #    # Truncate very long values like __BODY__
+    #    if (length($value) > 100) {
+    #        $value = substr($value, 0, 100) . "... [truncated]";
+    #    }
+    #    # Replace newlines for cleaner logging
+    #    $value =~ s/\n/\\n/g;
+    #    $value =~ s/\r/\\r/g;
+    #    print $debug_hdr "\n  $key => '$value'";
+    #}
+    #close $debug_hdr;
 
     # Inject Organization header if configured and not already present
     if ($config{organization} ne "" && !exists $hdr{"Organization"}) {
