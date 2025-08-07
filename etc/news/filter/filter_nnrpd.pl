@@ -117,6 +117,15 @@ sub filter_post {
     print $debug_fh "\n" . gmtime() . " DEBUG: filter_post started for user: $user";
     close $debug_fh;
 
+    # DEBUG: Log all available %attributes
+    open(my $debug_attr, '>>', $debuglog);
+    print $debug_attr "\n" . gmtime() . " DEBUG: %attributes contents:";
+    foreach my $key (sort keys %attributes) {
+        my $value = defined $attributes{$key} ? $attributes{$key} : 'undef';
+        print $debug_attr "\n  $key => '$value'";
+    }
+    close $debug_attr;
+
     $ver = "SpamAssassin 4.0.0";
 
     $postingaccount = $user;
@@ -162,6 +171,22 @@ sub filter_post {
     open(my $debug_fh2, '>>', $debuglog);
     print $debug_fh2 "\n" . gmtime() . " DEBUG: message-id set to: " . $hdr{"Message-ID"};
     close $debug_fh2;
+
+    # DEBUG: Log all available headers in %hdr
+    open(my $debug_hdr, '>>', $debuglog);
+    print $debug_hdr "\n" . gmtime() . " DEBUG: %hdr contents:";
+    foreach my $key (sort keys %hdr) {
+        my $value = defined $hdr{$key} ? $hdr{$key} : 'undef';
+        # Truncate very long values like __BODY__
+        if (length($value) > 100) {
+            $value = substr($value, 0, 100) . "... [truncated]";
+        }
+        # Replace newlines for cleaner logging
+        $value =~ s/\n/\\n/g;
+        $value =~ s/\r/\\r/g;
+        print $debug_hdr "\n  $key => '$value'";
+    }
+    close $debug_hdr;
 
     # Inject Organization header if configured and not already present
     if ($config{organization} ne "" && !exists $hdr{"Organization"}) {
